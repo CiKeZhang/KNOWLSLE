@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="card">
+    <view class="card-title">当前阶段</view>
+    <view class="stage-badge">{{stageLabel}}</view>
+  </view>
+
+  <view class="card" wx:if="{{archive}}">
+    <view class="card-title">目标院校</view>
+    <view class="info-row" wx:if="{{archive.targetSchoolName}}">
+      <text class="info-label">目标院校</text>
+      <text class="info-value">{{archive.targetSchoolName}}</text>
+    </view>
+    <view class="info-row" wx:if="{{archive.targetMajor}}">
+      <text class="info-label">目标专业</text>
+      <text class="info-value">{{archive.targetMajor}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">公共课进度</text>
+      <text class="info-value">{{archive.publicCourseProgress || 0}}%</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">专业课进度</text>
+      <text class="info-value">{{archive.majorCourseProgress || 0}}%</text>
+    </view>
+    <view class="info-row" wx:if="{{archive.examTotal}}">
+      <text class="info-label">初试总分</text>
+      <text class="info-value">{{archive.examTotal}}</text>
+    </view>
+    <view class="info-row" wx:if="{{archive.finalResult}}">
+      <text class="info-label">最终结果</text>
+      <text class="info-value">{{archive.finalResult}}</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">备考时间线</view>
+    <view class="timeline" wx:if="{{timeline.length > 0}}">
+      <view class="timeline-item" wx:for="{{timeline}}" wx:key="at">
+        <view class="timeline-dot"></view>
+        <view class="timeline-content">
+          <view class="timeline-title">{{item.title}}</view>
+          <view class="muted">{{item.desc}}</view>
+          <view class="muted time">{{item.at}}</view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty">暂无记录</view>
+  </view>
+</view>

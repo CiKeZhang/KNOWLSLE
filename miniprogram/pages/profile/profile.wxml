@@ -1,0 +1,78 @@
+<view class="container">
+  <view class="profile-card">
+    <image wx:if="{{userInfo.avatarUrl}}" class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image><view wx:else class="avatar avatar-placeholder">👤</view>
+    <view class="profile-info">
+      <view class="profile-name">{{userInfo.name}}</view>
+      <view class="profile-sub" wx:if="{{!isMentor}}">{{userInfo.majorName || ''}} {{userInfo.studentNo}}</view>
+      <view class="profile-sub" wx:else>工号:{{userInfo.staffNo}}</view>
+      <view class="profile-sub">用户名:{{userInfo.username}}</view>
+      <view class="role-tag {{isMentor ? 'mentor' : 'student'}}">
+        {{isMentor ? '导师' : '学生'}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 学生菜单 -->
+  <view class="menu-list" wx:if="{{!isMentor}}">
+    <view class="menu-item" bindtap="goArchive">
+      <text>考研档案</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goRecommend">
+      <text>AI 择校</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goPlan">
+      <text>备考计划</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goHelp">
+      <text>学业帮扶</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goNotifications">
+      <text>消息通知</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 导师菜单 -->
+  <view class="menu-list" wx:if="{{isMentor}}">
+    <view class="menu-item" bindtap="goMentorDashboard">
+      <text>进度看板</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goMentorStudents">
+      <text>学生管理</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goMentorAlerts">
+      <text>异常预警</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goMentorHelp">
+      <text>帮扶申请</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goNotifications">
+      <text>消息通知</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 通用菜单 -->
+  <view class="menu-list">
+    <view class="menu-item" bindtap="goPrivacy">
+      <text>隐私政策</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <button class="btn-logout" bindtap="logout">退出登录</button>
+</view>
+<view class="app-tab-bar">
+  <view class="tab-item {{tabActive === item.key ? 'active' : ''}}" wx:for="{{tabItems}}" wx:key="key" data-path="{{item.path}}" data-key="{{item.key}}" bindtap="onTabTap">
+    <view class="icon">{{item.icon}}</view>
+    <view class="text">{{item.text}}</view>
+  </view>
+</view>

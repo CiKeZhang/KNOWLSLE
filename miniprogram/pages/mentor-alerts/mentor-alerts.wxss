@@ -1,0 +1,89 @@
+/* pages/mentor-alerts/mentor-alerts.wxss */
+.container {
+  padding: 24rpx;
+  padding-bottom: 140rpx;
+}
+
+.loading {
+  text-align: center;
+  padding: 100rpx;
+  color: #999;
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.alert-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  border-left: 8rpx solid #f56c6c;
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.alert-type {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #f56c6c;
+}
+
+.alert-status {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 16rpx;
+}
+
+.alert-status.pending {
+  background: #fff5f5;
+  color: #f56c6c;
+}
+
+.alert-status.resolved {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+
+.alert-content {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 12rpx;
+}
+
+.alert-student {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.alert-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.handle-btn {
+  margin-top: 16rpx;
+  padding: 16rpx;
+  background: #409eff;
+  color: #fff;
+  text-align: center;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}
+
+.empty {
+  text-align: center;
+  padding: 100rpx;
+  color: #999;
+  font-size: 28rpx;
+}

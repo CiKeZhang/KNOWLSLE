@@ -1,0 +1,127 @@
+<view class="container">
+  <!-- 打卡状态卡 -->
+  <view class="card status-card {{checkin.status === 'SUBMITTED' ? 'card-done' : 'card-pending'}}">
+    <view class="flex-between">
+      <view>
+        <view class="status-title">{{checkin.status === 'SUBMITTED' ? '本周已打卡' : '本周未打卡'}}</view>
+        <view class="status-sub">{{checkin.weekStartText || '本周'}} (周一至周日)</view>
+      </view>
+      <view class="status-icon">{{checkin.status === 'SUBMITTED' ? '✓' : '!'}}</view>
+    </view>
+  </view>
+
+  <!-- 打卡表单(未提交时显示) -->
+  <block wx:if="{{checkin.status !== 'SUBMITTED'}}">
+    <!-- 第一步:选择当前阶段 -->
+    <view class="card">
+      <view class="card-title">1. 当前所处阶段 <text class="required">*</text></view>
+      <view class="stage-grid">
+        <view
+          wx:for="{{stages}}"
+          wx:key="value"
+          class="stage-item {{form.stage === item.value ? 'active' : ''}}"
+          bindtap="selectStage"
+          data-value="{{item.value}}"
+        >
+          {{item.label}}
+        </view>
+      </view>
+    </view>
+
+    <!-- 第二步:勾选完成事项 -->
+    <view class="card">
+      <view class="card-title">2. 本周完成事项 <text class="required">*</text></view>
+      <view class="check-list">
+        <view class="check-item" wx:for="{{checkItems}}" wx:key="id" bindtap="toggleCheckItem" data-id="{{item.id}}">
+          <view class="checkbox {{item.checked ? 'checked' : ''}}">
+            <text wx:if="{{item.checked}}">✓</text>
+          </view>
+          <text class="check-text">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 第三步:填写困难 -->
+    <view class="card">
+      <view class="card-title">3. 本周备考困难 <text class="required">*</text></view>
+      <textarea
+        class="textarea"
+        placeholder="请描述本周遇到的主要困难,辅导员/导师会据此提供帮扶..."
+        value="{{form.difficulties}}"
+        bindinput="onDifficultiesInput"
+        maxlength="500"
+      ></textarea>
+    </view>
+
+    <!-- 选填项 -->
+    <view class="card">
+      <view class="card-title">4. 补充信息(选填)</view>
+      <view class="form-row">
+        <text class="row-label">本周学习时长</text>
+        <input class="row-input" type="digit" placeholder="小时" value="{{form.studyHours}}" bindinput="onHoursInput" />
+      </view>
+      <view class="form-row">
+        <text class="row-label">公共课进度</text>
+        <slider class="row-slider" min="0" max="100" value="{{form.progressPublic}}" bindchange="onPublicProgress" />
+        <text class="progress-value">{{form.progressPublic}}%</text>
+      </view>
+      <view class="form-row">
+        <text class="row-label">专业课进度</text>
+        <slider class="row-slider" min="0" max="100" value="{{form.progressMajor}}" bindchange="onMajorProgress" />
+        <text class="progress-value">{{form.progressMajor}}%</text>
+      </view>
+    </view>
+
+    <button class="btn-submit" bindtap="submit" loading="{{submitting}}">
+      提交打卡
+    </button>
+  </block>
+
+  <!-- 已提交时显示打卡详情 -->
+  <block wx:if="{{checkin.status === 'SUBMITTED'}}">
+    <view class="card">
+      <view class="card-title">本周打卡详情</view>
+      <view class="detail-row">
+        <text class="detail-label">当前阶段</text>
+        <text class="detail-value">{{stageLabelMap[checkin.stage] || checkin.stage}}</text>
+      </view>
+      <view class="detail-row" wx:if="{{checkin.studyHours}}">
+        <text class="detail-label">学习时长</text>
+        <text class="detail-value">{{checkin.studyHours}} 小时</text>
+      </view>
+      <view class="detail-row" wx:if="{{checkin.difficulties}}">
+        <text class="detail-label">备考困难</text>
+        <text class="detail-value">{{checkin.difficulties}}</text>
+      </view>
+      <view class="detail-row" wx:if="{{checkin.completedItems && checkin.completedItems.length}}">
+        <text class="detail-label">完成事项</text>
+        <view class="detail-value">
+          <text wx:for="{{checkin.completedItems}}" wx:key="*this" class="tag tag-primary">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <button class="btn-makeup" bindtap="applyMakeup" wx:if="{{checkin.canMakeup}}">
+      申请补卡
+    </button>
+  </block>
+
+  <!-- 打卡历史 -->
+  <view class="card">
+    <view class="card-title">打卡历史</view>
+    <view class="history-item" wx:for="{{history}}" wx:key="weekStart">
+      <view class="history-week">{{item.weekStart}}</view>
+      <view class="history-status">
+        <text class="tag {{item.status === 'SUBMITTED' ? 'tag-success' : 'tag-danger'}}">
+          {{item.status === 'SUBMITTED' ? '已打卡' : '未打卡'}}
+        </text>
+      </view>
+    </view>
+  </view>
+</view>
+<view class="app-tab-bar">
+  <view class="tab-item {{tabActive === item.key ? 'active' : ''}}" wx:for="{{tabItems}}" wx:key="key" data-path="{{item.path}}" data-key="{{item.key}}" bindtap="onTabTap">
+    <view class="icon">{{item.icon}}</view>
+    <view class="text">{{item.text}}</view>
+  </view>
+</view>

@@ -1,0 +1,81 @@
+<view class="container">
+  <!-- 用户信息条 -->
+  <view class="user-bar">
+    <image wx:if="{{userInfo.avatarUrl}}" class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image><view wx:else class="avatar avatar-placeholder">👤</view>
+    <view class="user-info">
+      <view class="user-name">{{userInfo.name}}</view>
+      <view class="user-sub">{{userInfo.studentNo}} · {{stageLabel}}</view>
+    </view>
+  </view>
+
+  <!-- 本周打卡状态 -->
+  <view class="card checkin-card" bindtap="goCheckIn">
+    <view class="flex-between">
+      <view>
+        <view class="checkin-title">{{checkin.status === 'SUBMITTED' ? '本周已打卡' : '本周未打卡'}}</view>
+        <view class="muted">{{checkin.weekLabel}}</view>
+      </view>
+      <view class="checkin-status {{checkin.status === 'SUBMITTED' ? 'done' : 'pending'}}">
+        {{checkin.status === 'SUBMITTED' ? '已完成' : '去打卡'}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能网格 -->
+  <view class="grid">
+    <view class="grid-item" bindtap="goArchive">
+      <view class="grid-icon icon-blue">📊</view>
+      <view class="grid-text">考研档案</view>
+    </view>
+    <view class="grid-item" bindtap="goRecommend">
+      <view class="grid-icon icon-orange">🎯</view>
+      <view class="grid-text">AI择校</view>
+    </view>
+    <view class="grid-item" bindtap="goPlan">
+      <view class="grid-icon icon-green">📅</view>
+      <view class="grid-text">备考计划</view>
+    </view>
+    <view class="grid-item" bindtap="goResources">
+      <view class="grid-icon icon-purple">📚</view>
+      <view class="grid-text">备考资源</view>
+    </view>
+    <view class="grid-item" bindtap="goHelp">
+      <view class="grid-icon icon-red">💬</view>
+      <view class="grid-text">学业帮扶</view>
+    </view>
+    <view class="grid-item" bindtap="goNotifications">
+      <view class="grid-icon icon-teal">🔔</view>
+      <view class="grid-text">消息通知</view>
+    </view>
+  </view>
+
+  <!-- 备考时间线 -->
+  <view class="card">
+    <view class="card-title">备考进度</view>
+    <view class="timeline" wx:if="{{timeline.length > 0}}">
+      <view class="timeline-item" wx:for="{{timeline}}" wx:key="id">
+        <view class="timeline-dot"></view>
+        <view class="timeline-content">
+          <view class="timeline-title">{{item.title}}</view>
+          <view class="muted">{{item.desc}}</view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty">暂无进度记录</view>
+  </view>
+
+  <!-- 关键节点提醒 -->
+  <view class="card" wx:if="{{keyNodes.length > 0}}">
+    <view class="card-title">关键节点提醒</view>
+    <view class="node-item" wx:for="{{keyNodes}}" wx:key="id">
+      <view class="node-name">{{item.name}}</view>
+      <view class="muted node-date">{{item.remindAtText}}</view>
+    </view>
+  </view>
+</view>
+<view class="app-tab-bar">
+  <view class="tab-item {{tabActive === item.key ? 'active' : ''}}" wx:for="{{tabItems}}" wx:key="key" data-path="{{item.path}}" data-key="{{item.key}}" bindtap="onTabTap">
+    <view class="icon">{{item.icon}}</view>
+    <view class="text">{{item.text}}</view>
+  </view>
+</view>

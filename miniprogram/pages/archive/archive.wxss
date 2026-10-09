@@ -1,0 +1,24 @@
+.stage-badge {
+  display: inline-block;
+  background: #ecf5ff;
+  color: #409EFF;
+  padding: 12rpx 32rpx;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+}
+
+.info-row {
+  display: flex;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f2f5;
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { width: 180rpx; color: #909399; }
+.info-value { flex: 1; }
+
+.timeline-item { display: flex; padding: 16rpx 0; }
+.timeline-dot { width: 16rpx; height: 16rpx; border-radius: 50%; background: #409EFF; margin-right: 20rpx; margin-top: 10rpx; flex-shrink: 0; }
+.timeline-content { flex: 1; }
+.timeline-title { font-size: 28rpx; margin-bottom: 4rpx; }
+.time { font-size: 22rpx; margin-top: 4rpx; }
+.empty { text-align: center; color: #909399; padding: 40rpx 0; }

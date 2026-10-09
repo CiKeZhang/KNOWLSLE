@@ -1,0 +1,11 @@
+<view class="container">
+  <view class="card" wx:for="{{list}}" wx:key="id">
+    <view class="flex-between">
+      <view class="notif-title">{{item.title}}</view>
+      <view class="tag tag-primary" wx:if="{{!item.readAt}}">未读</view>
+    </view>
+    <view class="notif-content">{{item.content}}</view>
+    <view class="muted notif-time">{{item.sentAtText || item.sentAt}}</view>
+  </view>
+  <view wx:if="{{list.length === 0}}" class="empty">暂无消息</view>
+</view>

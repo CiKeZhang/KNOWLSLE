@@ -1,0 +1,6 @@
+.form-label { font-size: 28rpx; color: #606266; margin: 16rpx 0 12rpx; }
+.type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16rpx; margin-bottom: 24rpx; }
+.type-item { padding: 20rpx 0; text-align: center; border: 2rpx solid #e4e7ed; border-radius: 12rpx; font-size: 26rpx; color: #606266; }
+.type-item.active { border-color: #409EFF; background: #ecf5ff; color: #409EFF; }
+.textarea { width: 100%; min-height: 200rpx; border: 2rpx solid #e4e7ed; border-radius: 12rpx; padding: 20rpx; font-size: 28rpx; box-sizing: border-box; }
+.btn-submit { width: 100%; background: #409EFF; color: #fff; border-radius: 48rpx; font-size: 30rpx; margin-top: 24rpx; }

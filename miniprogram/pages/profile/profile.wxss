@@ -1,0 +1,58 @@
+.profile-card {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #409EFF, #337ecc);
+  border-radius: 16rpx;
+  padding: 40rpx 32rpx;
+  margin-bottom: 24rpx;
+  color: #fff;
+}
+
+.avatar { width: 120rpx; height: 120rpx; border-radius: 50%; margin-right: 24rpx; border: 4rpx solid rgba(255,255,255,0.5); }
+.profile-info { flex: 1; }
+.profile-name { font-size: 36rpx; font-weight: 600; margin-bottom: 8rpx; }
+.profile-sub { font-size: 26rpx; opacity: 0.9; }
+
+.role-tag {
+  display: inline-block;
+  margin-top: 8rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+}
+
+.role-tag.student {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.role-tag.mentor {
+  background: rgba(255, 215, 0, 0.3);
+}
+
+.menu-list {
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-bottom: 24rpx;
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f0f2f5;
+  font-size: 30rpx;
+}
+
+.menu-item:last-child { border-bottom: none; }
+
+.arrow { color: #c0c4cc; font-size: 32rpx; }
+
+.btn-logout {
+  width: 100%;
+  background: #fff;
+  color: #F56C6C;
+  border-radius: 48rpx;
+  font-size: 30rpx;
+}

@@ -1,0 +1,7 @@
+.res-title { font-size: 30rpx; font-weight: 600; margin-bottom: 12rpx; }
+.res-meta { display: flex; gap: 12rpx; align-items: center; margin-bottom: 12rpx; }
+.res-desc { font-size: 26rpx; color: #909399; line-height: 1.5; }
+.res-card { transition: background 0.15s; }
+.res-card:active { background: #f0f6ff; }
+.res-link { margin-top: 16rpx; font-size: 26rpx; color: #409eff; }
+.empty { text-align: center; color: #909399; padding: 60rpx 0; }

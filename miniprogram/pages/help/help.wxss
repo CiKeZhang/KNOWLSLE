@@ -1,0 +1,4 @@
+.btn-apply { background: #409EFF; color: #fff; border-radius: 48rpx; font-size: 30rpx; margin-bottom: 24rpx; }
+.help-type { font-size: 30rpx; font-weight: 600; margin-bottom: 12rpx; }
+.help-content { font-size: 28rpx; line-height: 1.6; margin-bottom: 12rpx; }
+.empty { text-align: center; color: #909399; padding: 60rpx 0; }

@@ -1,0 +1,49 @@
+<!-- pages/mentor-students/mentor-students.wxml -->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input
+      class="search-input"
+      placeholder="搜索姓名/学号"
+      value="{{keyword}}"
+      bindinput="onKeywordInput"
+      bindconfirm="onSearch"
+    />
+    <view class="search-btn" bindtap="onSearch">搜索</view>
+  </view>
+
+  <!-- 学生列表 -->
+  <view class="student-list">
+    <view
+      class="student-card"
+      wx:for="{{students}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="viewDetail"
+    >
+      <view class="student-info">
+        <view class="student-name">{{item.name}}</view>
+        <view class="student-no">
+          <text wx:if="{{item.majorName}}" class="major-tag">{{item.majorName}}</text>
+          {{item.studentNo}}
+        </view>
+        <view class="student-stage" wx:if="{{item.stage}}">阶段: {{item.stage}}</view>
+      </view>
+      <view class="student-actions" catchtap="toggleWatch" data-id="{{item.id}}" data-watched="{{item.watched}}">
+        <view class="watch-btn {{item.watched ? 'watched' : ''}}">
+          {{item.watched ? '★ 已关注' : '☆ 关注'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty" wx:if="{{!loading && students.length === 0}}">暂无学生数据</view>
+  <view class="loading-more" wx:if="{{loading && students.length > 0}}">加载中...</view>
+  <view class="no-more" wx:if="{{!hasMore && students.length > 0}}">没有更多了</view>
+<view class="app-tab-bar">
+  <view class="tab-item {{tabActive === item.key ? 'active' : ''}}" wx:for="{{tabItems}}" wx:key="key" data-path="{{item.path}}" data-key="{{item.key}}" bindtap="onTabTap">
+    <view class="icon">{{item.icon}}</view>
+    <view class="text">{{item.text}}</view>
+  </view>
+</view>
+</view>

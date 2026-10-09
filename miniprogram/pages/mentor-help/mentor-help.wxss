@@ -1,0 +1,170 @@
+/* pages/mentor-help/mentor-help.wxss */
+.container {
+  padding: 24rpx;
+  padding-bottom: 140rpx;
+}
+
+.loading {
+  text-align: center;
+  padding: 100rpx;
+  color: #999;
+}
+
+.help-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.help-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.help-type {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #409eff;
+}
+
+.help-status {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 16rpx;
+}
+
+.help-status.PENDING {
+  background: #fff5f5;
+  color: #f56c6c;
+}
+
+.help-status.IN_PROGRESS {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.help-status.RESOLVED {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+
+.help-student {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.help-content {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 12rpx;
+}
+
+.help-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.help-actions {
+  margin-top: 16rpx;
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 16rpx;
+  text-align: center;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}
+
+.action-btn.assign {
+  background: #409eff;
+  color: #fff;
+}
+
+.action-btn.record {
+  background: #67c23a;
+  color: #fff;
+}
+
+.empty {
+  text-align: center;
+  padding: 100rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 弹窗 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-content {
+  width: 600rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 32rpx;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 24rpx;
+}
+
+.modal-textarea {
+  width: 100%;
+  height: 160rpx;
+  background: #f5f5f5;
+  border-radius: 8rpx;
+  padding: 16rpx;
+  font-size: 28rpx;
+  margin-bottom: 16rpx;
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 16rpx;
+  text-align: center;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}
+
+.modal-btn.cancel {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.modal-btn.confirm {
+  background: #409eff;
+  color: #fff;
+}

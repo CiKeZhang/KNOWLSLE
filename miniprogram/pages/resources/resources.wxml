@@ -1,0 +1,18 @@
+<view class="container">
+  <view class="card res-card" wx:for="{{list}}" wx:key="id" bindtap="openResource" data-id="{{item.id}}">
+    <view class="res-title">{{item.title}}</view>
+    <view class="res-meta">
+      <text class="tag tag-primary">{{item.typeLabel || item.type}}</text>
+      <text class="muted">{{item.stageLabel || ''}}</text>
+    </view>
+    <view class="res-desc" wx:if="{{item.description}}">{{item.description}}</view>
+    <view class="res-link" wx:if="{{item.url}}">查看/获取资源 →</view>
+  </view>
+  <view wx:if="{{list.length === 0}}" class="empty">暂无资源</view>
+</view>
+<view class="app-tab-bar">
+  <view class="tab-item {{tabActive === item.key ? 'active' : ''}}" wx:for="{{tabItems}}" wx:key="key" data-path="{{item.path}}" data-key="{{item.key}}" bindtap="onTabTap">
+    <view class="icon">{{item.icon}}</view>
+    <view class="text">{{item.text}}</view>
+  </view>
+</view>

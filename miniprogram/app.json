@@ -1,0 +1,32 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/index/index",
+    "pages/checkin/checkin",
+    "pages/archive/archive",
+    "pages/recommend/recommend",
+    "pages/plan/plan",
+    "pages/help/help",
+    "pages/help-apply/help-apply",
+    "pages/notifications/notifications",
+    "pages/resources/resources",
+    "pages/profile/profile",
+    "pages/mentor-dashboard/mentor-dashboard",
+    "pages/mentor-students/mentor-students",
+    "pages/mentor-alerts/mentor-alerts",
+    "pages/mentor-help/mentor-help",
+    "pages/privacy/privacy"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#409EFF",
+    "navigationBarTitleText": "考研进度管理",
+    "navigationBarTextStyle": "white"
+  },
+  "sitemapLocation": "sitemap.json",
+  "permission": {
+    "scope.userInfo": {
+      "desc": "用于完善考研档案"
+    }
+  }
+}

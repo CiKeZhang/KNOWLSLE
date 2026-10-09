@@ -1,0 +1,14 @@
+<view class="container">
+  <button class="btn-apply" bindtap="goApply">+ 提交帮扶申请</button>
+
+  <view class="card" wx:for="{{list}}" wx:key="id">
+    <view class="flex-between">
+      <view class="help-type">{{item.typeLabel || item.type}}</view>
+      <view class="tag {{item.status === 'RESOLVED' ? 'tag-success' : item.status === 'OPEN' ? 'tag-warning' : 'tag-primary'}}">{{item.status}}</view>
+    </view>
+    <view class="help-content">{{item.content}}</view>
+    <view class="muted" wx:if="{{item.replyContent}}">回复:{{item.replyContent}}</view>
+  </view>
+
+  <view wx:if="{{list.length === 0}}" class="empty">暂无帮扶申请</view>
+</view>

@@ -1,0 +1,103 @@
+/* 全局样式 */
+page {
+  background-color: #f5f7fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 28rpx;
+  color: #303133;
+}
+
+.container {
+  padding: 24rpx;
+  padding-bottom: 160rpx; /* 避开自定义 tabBar(约100rpx)+安全区 */
+  box-sizing: border-box;
+}
+
+/* 头像占位(无头像时显示) */
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #dfe8f5;
+  font-size: 56rpx;
+  color: #909399;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 24rpx;
+  color: #303133;
+}
+
+.muted {
+  color: #909399;
+  font-size: 24rpx;
+}
+
+.btn-primary {
+  background: #409EFF;
+  color: #fff;
+  border-radius: 48rpx;
+  font-size: 30rpx;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  margin-right: 12rpx;
+}
+.tag-primary { background: #ecf5ff; color: #409EFF; }
+.tag-success { background: #f0f9eb; color: #67C23A; }
+.tag-warning { background: #fdf6ec; color: #E6A23C; }
+.tag-danger { background: #fef0f0; color: #F56C6C; }
+
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-center { display: flex; justify-content: center; align-items: center; }
+.mt-16 { margin-top: 16rpx; }
+.mt-24 { margin-top: 24rpx; }
+.mb-16 { margin-bottom: 16rpx; }
+.mb-24 { margin-bottom: 24rpx; }
+
+/* 底部导航(原生 view 实现,非自定义组件) */
+.app-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  height: 100rpx;
+  background: #fff;
+  display: flex;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.06);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.app-tab-bar .tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+.app-tab-bar .tab-item .icon {
+  font-size: 38rpx;
+  line-height: 1;
+  margin-bottom: 6rpx;
+}
+.app-tab-bar .tab-item .text {
+  font-size: 22rpx;
+}
+.app-tab-bar .tab-item.active {
+  color: #409eff;
+}
