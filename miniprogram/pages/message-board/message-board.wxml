@@ -1,0 +1,90 @@
+<view class="container">
+  <!-- 顶部提示 -->
+  <view class="board-tip">
+    <text class="tip-icon">🛡️</text>
+    <text class="tip-text">AI 智能审核中，禁止发布广告、违法违规及不健康内容</text>
+  </view>
+
+  <!-- 留言列表 -->
+  <view class="msg-list">
+    <view class="msg-card" wx:for="{{list}}" wx:key="id" bindtap="goDetail" data-id="{{item.id}}">
+      <view class="msg-header">
+        <view class="user-info">
+          <image wx:if="{{item.user.avatarUrl}}" class="avatar" src="{{item.user.avatarUrl}}" mode="aspectFill"></image>
+          <view wx:else class="avatar avatar-placeholder">{{item.isAnonymous ? '匿' : item.user.name[0]}}</view>
+          <view class="user-meta">
+            <view class="user-name">{{item.isAnonymous ? '匿名用户' : item.user.name}}</view>
+            <view class="msg-time">{{item.timeText}}</view>
+          </view>
+        </view>
+      </view>
+      <view class="msg-content">{{item.content}}</view>
+      <view class="msg-footer">
+        <view class="action-item {{item.isLiked ? 'liked' : ''}}" catchtap="toggleLike" data-id="{{item.id}}" data-index="{{index}}">
+          <text class="action-icon">{{item.isLiked ? '❤️' : '🤍'}}</text>
+          <text class="action-text">{{item.likeCount || '点赞'}}</text>
+        </view>
+        <view class="action-item">
+          <text class="action-icon">💬</text>
+          <text class="action-text">{{item.replyCount || '回复'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{list.length === 0 && !loading}}" class="empty">
+    <view class="empty-icon">💭</view>
+    <view class="empty-text">还没有留言</view>
+    <view class="empty-sub">来发布第一条考研心情吧~</view>
+  </view>
+
+  <!-- 加载更多 -->
+  <view wx:if="{{loading && list.length > 0}}" class="load-more">加载中...</view>
+  <view wx:if="{{!loading && list.length > 0 && list.length >= total}}" class="load-more end">— 没有更多了 —</view>
+
+  <!-- 发布按钮 -->
+  <view class="fab-publish" bindtap="openPublish">
+    <text class="fab-icon">✏️</text>
+  </view>
+</view>
+
+<!-- 发布弹窗 -->
+<view wx:if="{{showPublish}}" class="publish-modal" catchtap="closePublish">
+  <view class="publish-panel" catchtap="">
+    <view class="publish-header">
+      <text class="publish-title">发布留言</text>
+      <text class="publish-close" bindtap="closePublish">✕</text>
+    </view>
+    <textarea
+      class="publish-textarea"
+      placeholder="分享你的考研心得、疑问、经验...（纯文字，500字以内）"
+      value="{{publishContent}}"
+      bindinput="onContentInput"
+      maxlength="500"
+      auto-height
+    />
+    <view class="publish-footer">
+      <view class="anonymous-row" bindtap="toggleAnonymous">
+        <view class="checkbox {{isAnonymous ? 'checked' : ''}}">
+          <text wx:if="{{isAnonymous}}">✓</text>
+        </view>
+        <text class="anonymous-label">匿名发布</text>
+      </view>
+      <view class="char-count">{{publishContent.length}}/500</view>
+    </view>
+    <button class="btn-submit" bindtap="submitPublish" disabled="{{submitting}}" loading="{{submitting}}">
+      {{submitting ? '发布中...' : '发布'}}
+    </button>
+    <view class="audit-hint">
+      <text>🔒 所有留言将经过 AI 审核，违规内容将被拦截</text>
+    </view>
+  </view>
+</view>
+
+<view class="app-tab-bar">
+  <view class="tab-item {{tabActive === item.key ? 'active' : ''}}" wx:for="{{tabItems}}" wx:key="key" data-path="{{item.path}}" data-key="{{item.key}}" bindtap="onTabTap">
+    <view class="icon">{{item.icon}}</view>
+    <view class="text">{{item.text}}</view>
+  </view>
+</view>

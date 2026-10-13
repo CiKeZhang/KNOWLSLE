@@ -1,0 +1,89 @@
+# 经管考研进度管控与智能辅导双端系统 - 一键部署
+# 使用: docker compose up -d
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: kygl_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-kygl_root_2026}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-kygl}
+      MYSQL_USER: ${MYSQL_USER:-kygl}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-kygl_pwd_2026}
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/prisma/init-sql:/docker-entrypoint-initdb.d
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native-password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-kygl_root_2026}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: kygl_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD:-kygl_redis_2026}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-kygl_redis_2026}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kygl_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://kygl:kygl_pwd_2026@mysql:3306/kygl?charset=utf8mb4&connection_limit=20&pool_timeout=10
+      REDIS_URL: redis://:kygl_redis_2026@redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:-please_change_jwt_secret_in_production}
+      JWT_EXPIRES_IN: 12h
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-please_change_encryption_key_in_production}
+      CORS_ORIGINS: http://localhost:8080,http://localhost:5173
+      UPLOAD_DIR: /app/uploads
+      BACKUP_DIR: /app/backups
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - uploads:/app/uploads
+      - backups:/app/backups
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: /api
+    container_name: kygl_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    # Nginx 反代 /api -> backend:3000,前端静态资源由 Nginx 托管
+
+volumes:
+  mysql_data:
+  redis_data:
+  uploads:
+  backups:

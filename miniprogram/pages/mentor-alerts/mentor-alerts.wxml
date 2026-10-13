@@ -1,0 +1,40 @@
+<!-- pages/mentor-alerts/mentor-alerts.wxml -->
+<view class="container">
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <block wx:else>
+    <view class="alert-list">
+      <view class="alert-card" wx:for="{{alerts}}" wx:key="id">
+        <view class="alert-header">
+          <view class="alert-type">{{item.type || '异常'}}</view>
+          <view class="alert-status {{item.status === 'PENDING' ? 'pending' : 'resolved'}}">
+            {{item.status === 'PENDING' ? '待处理' : '已处理'}}
+          </view>
+        </view>
+        <view class="alert-content">{{item.content || item.description}}</view>
+        <view class="alert-student" wx:if="{{item.studentName}}">
+          学生: {{item.studentName}}
+        </view>
+        <view class="alert-time" wx:if="{{item.createdAt}}">
+          {{item.createdAt}}
+        </view>
+        <view
+          class="handle-btn"
+          wx:if="{{item.status === 'PENDING'}}"
+          data-id="{{item.id}}"
+          bindtap="handleAlert"
+        >
+          标记已处理
+        </view>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{alerts.length === 0}}">暂无预警信息</view>
+  </block>
+<view class="app-tab-bar">
+  <view class="tab-item {{tabActive === item.key ? 'active' : ''}}" wx:for="{{tabItems}}" wx:key="key" data-path="{{item.path}}" data-key="{{item.key}}" bindtap="onTabTap">
+    <view class="icon">{{item.icon}}</view>
+    <view class="text">{{item.text}}</view>
+  </view>
+</view>
+</view>

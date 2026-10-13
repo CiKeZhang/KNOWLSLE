@@ -1,0 +1,15 @@
+<!-- pages/privacy/privacy.wxml -->
+<view class="privacy-page">
+  <view class="privacy-header">
+    <text class="privacy-title">{{title}}</text>
+  </view>
+
+  <view class="privacy-body">
+    <block wx:for="{{sections}}" wx:key="index">
+      <view class="section">
+        <text class="section-heading">{{item.heading}}</text>
+        <text class="section-content">{{item.content}}</text>
+      </view>
+    </block>
+  </view>
+</view>

@@ -1,0 +1,70 @@
+<!-- pages/mentor-help/mentor-help.wxml -->
+<view class="container">
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <block wx:else>
+    <view class="help-list">
+      <view class="help-card" wx:for="{{applications}}" wx:key="id">
+        <view class="help-header">
+          <view class="help-type">{{item.type}}</view>
+          <view class="help-status {{item.status}}">
+            {{item.status === 'PENDING' ? '待处理' : item.status === 'IN_PROGRESS' ? '进行中' : '已解决'}}
+          </view>
+        </view>
+        <view class="help-student" wx:if="{{item.studentName}}">申请人: {{item.studentName}}</view>
+        <view class="help-content">{{item.content || item.description}}</view>
+        <view class="help-time" wx:if="{{item.createdAt}}">{{item.createdAt}}</view>
+
+        <view class="help-actions">
+          <view
+            class="action-btn assign"
+            wx:if="{{item.status === 'PENDING'}}"
+            data-id="{{item.id}}"
+            bindtap="assignHelp"
+          >
+            接受帮扶
+          </view>
+          <view
+            class="action-btn record"
+            wx:if="{{item.status === 'IN_PROGRESS'}}"
+            data-id="{{item.id}}"
+            bindtap="openRecordModal"
+          >
+            记录帮扶
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{applications.length === 0}}">暂无帮扶申请</view>
+  </block>
+
+  <!-- 记录帮扶弹窗 -->
+  <view class="modal" wx:if="{{recordModal.visible}}" bindtap="closeRecordModal">
+    <view class="modal-content" catchtap="">
+      <view class="modal-title">记录帮扶内容</view>
+      <textarea
+        class="modal-textarea"
+        placeholder="请填写帮扶内容"
+        value="{{recordModal.content}}"
+        bindinput="onContentInput"
+      />
+      <textarea
+        class="modal-textarea"
+        placeholder="帮扶效果(选填)"
+        value="{{recordModal.effect}}"
+        bindinput="onEffectInput"
+      />
+      <view class="modal-actions">
+        <view class="modal-btn cancel" bindtap="closeRecordModal">取消</view>
+        <view class="modal-btn confirm" bindtap="submitRecord">提交</view>
+      </view>
+    </view>
+  </view>
+<view class="app-tab-bar">
+  <view class="tab-item {{tabActive === item.key ? 'active' : ''}}" wx:for="{{tabItems}}" wx:key="key" data-path="{{item.path}}" data-key="{{item.key}}" bindtap="onTabTap">
+    <view class="icon">{{item.icon}}</view>
+    <view class="text">{{item.text}}</view>
+  </view>
+</view>
+</view>

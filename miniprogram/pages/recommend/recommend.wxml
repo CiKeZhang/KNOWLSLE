@@ -1,0 +1,62 @@
+<view class="container">
+  <view class="card" wx:if="{{!result}}">
+    <view class="card-title">AI 智能择校</view>
+    <view class="form-item">
+      <text class="label">本科专业 *</text>
+      <input class="input" placeholder="如:工商管理" value="{{form.undergraduateMajor}}" bindinput="onFieldInput" data-field="undergraduateMajor" />
+    </view>
+    <view class="form-item">
+      <text class="label">绩点</text>
+      <input class="input" placeholder="如:3.5" value="{{form.gpa}}" bindinput="onFieldInput" data-field="gpa" />
+    </view>
+    <view class="form-item">
+      <text class="label">专业排名</text>
+      <input class="input" placeholder="如:5/60" value="{{form.majorRank}}" bindinput="onFieldInput" data-field="majorRank" />
+    </view>
+    <view class="form-item">
+      <text class="label">意向地区</text>
+      <input class="input" placeholder="如:北京" value="{{form.region}}" bindinput="onFieldInput" data-field="region" />
+    </view>
+    <view class="form-item">
+      <text class="label">院校偏好</text>
+      <input class="input" placeholder="985/211/双一流/双非" value="{{form.schoolTierPref}}" bindinput="onFieldInput" data-field="schoolTierPref" />
+    </view>
+    <view class="form-item">
+      <text class="label">目标专业</text>
+      <input class="input" placeholder="如:企业管理" value="{{form.targetMajor}}" bindinput="onFieldInput" data-field="targetMajor" />
+    </view>
+    <view class="form-item">
+      <text class="label">优势科目(逗号分隔)</text>
+      <input class="input" placeholder="如:英语,数学" value="{{form.strongSubjects}}" bindinput="onFieldInput" data-field="strongSubjects" />
+    </view>
+    <view class="form-item">
+      <text class="label">弱势科目(逗号分隔)</text>
+      <input class="input" placeholder="如:政治" value="{{form.weakSubjects}}" bindinput="onFieldInput" data-field="weakSubjects" />
+    </view>
+    <button class="btn-generate" bindtap="generate" loading="{{loading}}">生成择校方案</button>
+  </view>
+
+  <block wx:if="{{result}}">
+    <view class="card" wx:if="{{result.llmSummary}}">
+      <view class="card-title">综合建议</view>
+      <view class="summary">{{result.llmSummary}}</view>
+    </view>
+
+    <view class="card" wx:for="{{result.items}}" wx:key="itemId">
+      <view class="flex-between">
+        <view class="school-name">{{item.schoolName}}</view>
+        <view class="tag {{item.tier === '冲刺' ? 'tag-danger' : item.tier === '稳妥' ? 'tag-warning' : 'tag-success'}}">{{item.tier}}</view>
+      </view>
+      <view class="muted">{{item.majorName}}</view>
+      <view class="metrics">
+        <view class="metric"><text class="m-label">匹配度</text><text class="m-value">{{item.matchScore}}</text></view>
+        <view class="metric"><text class="m-label">上岸概率</text><text class="m-value">{{item.probOfAdmission}}%</text></view>
+        <view class="metric"><text class="m-label">难度</text><text class="m-value">{{item.difficulty}}</text></view>
+      </view>
+      <view class="reason" wx:if="{{item.reason}}"><text class="reason-label">推荐理由:</text>{{item.reason}}</view>
+      <view class="risk" wx:if="{{item.risk}}"><text class="risk-label">风险点:</text>{{item.risk}}</view>
+    </view>
+
+    <button class="btn-reset" bindtap="reset">重新生成</button>
+  </block>
+</view>

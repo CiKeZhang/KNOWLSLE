@@ -1,0 +1,106 @@
+/* pages/mentor-students/mentor-students.wxss */
+.container {
+  padding: 24rpx;
+  padding-bottom: 140rpx;
+}
+
+.search-bar {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.search-input {
+  flex: 1;
+  height: 72rpx;
+  background: #f5f5f5;
+  border-radius: 36rpx;
+  padding: 0 28rpx;
+  font-size: 28rpx;
+}
+
+.search-btn {
+  height: 72rpx;
+  line-height: 72rpx;
+  padding: 0 32rpx;
+  background: #409eff;
+  color: #fff;
+  border-radius: 36rpx;
+  font-size: 28rpx;
+}
+
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.student-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.student-info {
+  flex: 1;
+}
+
+.student-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.student-no {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.student-stage {
+  font-size: 24rpx;
+  color: #409eff;
+  margin-top: 6rpx;
+}
+
+.watch-btn {
+  padding: 12rpx 24rpx;
+  background: #f0f0f0;
+  color: #666;
+  border-radius: 24rpx;
+  font-size: 26rpx;
+}
+
+.watch-btn.watched {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.empty {
+  text-align: center;
+  padding: 100rpx;
+  color: #999;
+  font-size: 28rpx;
+}
+
+.loading-more,
+.no-more {
+  text-align: center;
+  padding: 32rpx;
+  color: #999;
+  font-size: 26rpx;
+}
+
+.major-tag {
+  display: inline-block;
+  background: #ecf5ff;
+  color: #409eff;
+  font-size: 22rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 6rpx;
+  margin-right: 12rpx;
+}

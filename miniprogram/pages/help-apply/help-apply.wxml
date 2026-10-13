@@ -1,0 +1,20 @@
+<view class="container">
+  <view class="card">
+    <view class="card-title">学业帮扶申请</view>
+    <view class="form-label">帮扶类型 *</view>
+    <view class="type-grid">
+      <view
+        wx:for="{{types}}"
+        wx:key="value"
+        class="type-item {{form.type === item.value ? 'active' : ''}}"
+        bindtap="selectType"
+        data-value="{{item.value}}"
+      >{{item.label}}</view>
+    </view>
+
+    <view class="form-label">帮扶内容 *</view>
+    <textarea class="textarea" placeholder="请详细描述你需要的帮扶..." value="{{form.content}}" bindinput="onContentInput" maxlength="500"></textarea>
+
+    <button class="btn-submit" bindtap="submit" loading="{{submitting}}">提交申请</button>
+  </view>
+</view>

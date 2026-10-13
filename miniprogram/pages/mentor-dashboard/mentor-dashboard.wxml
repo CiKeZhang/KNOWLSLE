@@ -1,0 +1,68 @@
+<!-- pages/mentor-dashboard/mentor-dashboard.wxml -->
+<view class="container">
+  <view wx:if="{{loading}}" class="loading">加载中...</view>
+
+  <block wx:else>
+    <!-- 统计卡片 -->
+    <view class="stat-grid">
+      <view class="stat-card" bindtap="goStudents">
+        <view class="stat-num">{{stats.totalStudents}}</view>
+        <view class="stat-label">学生总数</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-num">{{stats.checkedInToday}}</view>
+        <view class="stat-label">今日打卡</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-num">{{stats.checkinRate}}</view>
+        <view class="stat-label">打卡率</view>
+      </view>
+      <view class="stat-card warn" bindtap="goAlerts">
+        <view class="stat-num">{{stats.alerts}}</view>
+        <view class="stat-label">异常预警</view>
+      </view>
+      <view class="stat-card warn" bindtap="goHelp">
+        <view class="stat-num">{{stats.pendingHelp}}</view>
+        <view class="stat-label">待处理帮扶</view>
+      </view>
+    </view>
+
+    <!-- 阶段分布 -->
+    <view class="section">
+      <view class="section-title">考研阶段分布</view>
+      <view class="stage-list" wx:if="{{stageDistribution.length > 0}}">
+        <view class="stage-item" wx:for="{{stageDistribution}}" wx:key="stage">
+          <view class="stage-name">{{item.stage}}</view>
+          <view class="stage-bar">
+            <view class="stage-fill" style="width: {{item.percent}}%"></view>
+          </view>
+          <view class="stage-count">{{item.count}}人</view>
+        </view>
+      </view>
+      <view class="empty" wx:else>暂无数据</view>
+    </view>
+
+    <!-- 按专业统计 -->
+    <view class="section">
+      <view class="section-title">各专业考研情况</view>
+      <view class="major-list" wx:if="{{majorStats.length > 0}}">
+        <view class="major-item" wx:for="{{majorStats}}" wx:key="major">
+          <view class="major-head">
+            <text class="major-name">{{item.major}}</text>
+            <text class="major-count">{{item.checkedIn}}/{{item.total}} 已打卡 · {{item.percent}}%</text>
+          </view>
+          <view class="major-bar">
+            <view class="major-fill" style="width: {{item.percent}}%"></view>
+          </view>
+        </view>
+      </view>
+      <view class="empty" wx:else>暂无数据</view>
+    </view>
+  </block>
+<view class="app-tab-bar">
+  <view class="tab-item {{tabActive === item.key ? 'active' : ''}}" wx:for="{{tabItems}}" wx:key="key" data-path="{{item.path}}" data-key="{{item.key}}" bindtap="onTabTap">
+    <view class="icon">{{item.icon}}</view>
+    <view class="text">{{item.text}}</view>
+  </view>
+</view>
+</view>

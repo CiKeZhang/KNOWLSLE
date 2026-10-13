@@ -1,0 +1,45 @@
+<view class="container">
+  <view class="card">
+    <view class="flex-between">
+      <view class="period-switch">
+        <text class="period {{period === 'weekly' ? 'active' : ''}}" data-period="weekly" bindtap="switchPeriod">本周</text>
+        <text class="period {{period === 'monthly' ? 'active' : ''}}" data-period="monthly" bindtap="switchPeriod">本月</text>
+      </view>
+      <text class="regenerate" bindtap="regenerate">↻ 重新生成</text>
+    </view>
+    <view class="muted" wx:if="{{plan.notes}}">{{plan.notes}}</view>
+  </view>
+
+  <view class="card">
+    <view class="task-list">
+      <view class="task-item" wx:for="{{tasks}}" wx:key="index">
+        <view class="checkbox {{item.done ? 'checked' : ''}}" bindtap="toggleTask" data-index="{{index}}">
+          <text wx:if="{{item.done}}">✓</text>
+        </view>
+        <view class="task-content">
+          <block wx:if="{{editing}}">
+            <input class="task-input" value="{{item.task}}" bindinput="onTaskInput" data-index="{{index}}" placeholder="任务内容" />
+          </block>
+          <block wx:else>
+            <view class="task-text {{item.done ? 'done' : ''}}">{{item.task}}</view>
+          </block>
+          <view class="task-meta">
+            <text class="tag tag-primary">{{item.subject}}</text>
+            <text class="muted">{{item.targetHours}}h</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="plan-actions">
+      <block wx:if="{{!editing}}">
+        <button class="btn-edit" bindtap="editing=true">手动调整</button>
+      </block>
+      <block wx:else>
+        <button class="btn-add" bindtap="addTask">+ 新增任务</button>
+        <button class="btn-save" bindtap="save" loading="{{saving}}">保存</button>
+        <button class="btn-cancel" bindtap="editing=false">取消</button>
+      </block>
+    </view>
+  </view>
+</view>

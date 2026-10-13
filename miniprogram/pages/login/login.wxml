@@ -1,0 +1,56 @@
+<view class="login-container">
+  <view class="logo-area">
+    <view class="app-name">考研进度管理</view>
+    <view class="app-desc">进度可视化 · 帮扶精准化 · 备考智能化</view>
+  </view>
+  <view class="login-area">
+    <block wx:if="{{step === 1}}">
+      <button class="btn-wechat" bindtap="onWechatLogin">微信一键登录</button>
+      <view class="muted tip">点击后将获取你的微信身份用于登录</view>
+    </block>
+    <block wx:if="{{step === 2}}">
+      <view class="step-title">请授权手机号</view>
+      <view class="muted step-desc">用于接收考研关键节点提醒</view>
+      <button class="btn-phone" open-type="getPhoneNumber" bindgetphonenumber="onGetPhone">授权手机号</button>
+      <button class="btn-skip" bindtap="skipPhone">暂不授权</button>
+    </block>
+    <block wx:if="{{step === 3}}">
+      <view class="step-title">完善个人信息</view>
+      <view class="muted step-desc">用于生成考研档案,请如实填写</view>
+
+      <view class="role-switch">
+        <view class="role-item {{identity === 'student' ? 'active' : ''}}" bindtap="switchIdentity" data-role="student">学生</view>
+        <view class="role-item {{identity === 'mentor' ? 'active' : ''}}" bindtap="switchIdentity" data-role="mentor">导师</view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">真实姓名</text>
+        <input class="input" placeholder="请输入真实姓名" value="{{form.name}}" bindinput="onNameInput" />
+      </view>
+      <view class="form-item">
+        <text class="label">{{identity === 'mentor' ? '工号' : '学号'}}</text>
+        <input class="input" placeholder="{{identity === 'mentor' ? '请输入工号(管理员分配)' : '请输入学号'}}" value="{{form.studentNo}}" bindinput="onStudentNoInput" />
+      </view>
+      <view class="form-item" wx:if="{{identity === 'student'}}">
+        <text class="label">专业</text>
+        <picker class="picker" mode="selector" range="{{majors}}" value="{{majorIndex}}" bindchange="onMajorChange">
+          <view class="picker-value {{majorIndex < 0 ? 'placeholder' : ''}}">
+            {{majorIndex >= 0 ? majors[majorIndex] : '请选择专业'}}
+          </view>
+        </picker>
+      </view>
+      <view class="form-tip" wx:if="{{identity === 'student'}}">用户名将自动设置为{{form.name || '姓名'}}{{form.studentNo || '学号'}}</view>
+      <view class="form-tip" wx:else>导师账号需由学院管理员预先开通,工号问题请联系管理员</view>
+
+      <view class="privacy-agree">
+        <view class="checkbox {{agreedPrivacy ? 'checked' : ''}}" bindtap="togglePrivacy">
+          <text wx:if="{{agreedPrivacy}}" class="check-icon">✓</text>
+        </view>
+        <text class="agree-text">我已阅读并同意</text>
+        <text class="privacy-link" catchtap="openPrivacy">《隐私政策》</text>
+      </view>
+
+      <button class="btn-confirm" bindtap="onComplete" loading="{{submitting}}">完成登录</button>
+    </block>
+  </view>
+</view>

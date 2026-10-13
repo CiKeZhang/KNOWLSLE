@@ -1,0 +1,114 @@
+<view class="chat-container">
+  <!-- 顶部导航栏（额外功能区） -->
+  <view class="chat-header">
+    <view class="header-left" bindtap="toggleSessions">
+      <text class="header-icon">📋</text>
+      <text class="header-text">会话</text>
+    </view>
+    <view class="header-title">
+      <text class="title-icon">🎯</text>
+      <text>研选小助手</text>
+    </view>
+    <view class="header-right" bindtap="newChat">
+      <text class="header-icon">✏️</text>
+    </view>
+  </view>
+
+  <!-- 消息列表 -->
+  <scroll-view
+    class="message-list"
+    scroll-y
+    scroll-into-view="{{scrollToView}}"
+    scroll-with-animation
+    enhanced
+    show-scrollbar="{{false}}"
+  >
+    <view class="messages-wrap">
+      <!-- 欢迎消息 -->
+      <block wx:for="{{messages}}" wx:key="id">
+        <view id="msg_{{item.id}}" class="msg-item {{item.role}}">
+          <view wx:if="{{item.role === 'assistant'}}" class="msg-avatar ai">
+            <text>🤖</text>
+          </view>
+          <view class="msg-bubble {{item.role}} {{item.isError ? 'error' : ''}}">
+            <text class="msg-text">{{item.content}}</text>
+          </view>
+          <view wx:if="{{item.role === 'user'}}" class="msg-avatar user">
+            <text>👤</text>
+          </view>
+        </view>
+      </block>
+
+      <!-- 正在输入提示 -->
+      <view wx:if="{{sending}}" class="msg-item assistant">
+        <view class="msg-avatar ai"><text>🤖</text></view>
+        <view class="msg-bubble assistant typing">
+          <view class="typing-dots">
+            <view class="dot"></view>
+            <view class="dot"></view>
+            <view class="dot"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快捷问题（仅欢迎消息后显示） -->
+    <view wx:if="{{messages.length <= 1 && !sending}}" class="quick-questions">
+      <view class="quick-title">试试问我这些问题</view>
+      <view class="quick-list">
+        <view class="quick-item" wx:for="{{quickQuestions}}" wx:key="*this" data-question="{{item}}" bindtap="sendQuickQuestion">
+          {{item}}
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部输入框 -->
+  <view class="input-bar">
+    <input
+      class="chat-input"
+      placeholder="输入你的问题..."
+      value="{{inputText}}"
+      bindinput="onInput"
+      confirm-type="send"
+      bindconfirm="sendMessage"
+      maxlength="500"
+      adjust-position
+    />
+    <button class="send-btn" bindtap="sendMessage" disabled="{{!inputText.trim() || sending}}">
+      发送
+    </button>
+  </view>
+</view>
+
+<!-- 会话侧边栏 -->
+<view wx:if="{{showSessions}}" class="session-mask" bindtap="toggleSessions">
+  <view class="session-panel" catchtap="">
+    <view class="session-header">
+      <text class="session-title">历史会话</text>
+      <text class="session-close" bindtap="toggleSessions">✕</text>
+    </view>
+    <scroll-view class="session-list" scroll-y>
+      <view
+        class="session-item {{sessionId === item.id ? 'active' : ''}}"
+        wx:for="{{sessions}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="selectSession"
+      >
+        <view class="session-icon">💬</view>
+        <view class="session-info">
+          <view class="session-name">{{item.title || '新会话'}}</view>
+          <view class="session-time">{{item.lastMessageAt ? item.lastMessageAt.slice(5, 16).replace('T', ' ') : '暂无消息'}}</view>
+        </view>
+        <view class="session-delete" catchtap="deleteSession" data-id="{{item.id}}">🗑️</view>
+      </view>
+      <view wx:if="{{sessions.length === 0}}" class="session-empty">
+        暂无历史会话
+      </view>
+    </scroll-view>
+    <view class="new-session-btn" bindtap="newChat">
+      <text>+ 新建会话</text>
+    </view>
+  </view>
+</view>

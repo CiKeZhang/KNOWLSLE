@@ -1,0 +1,4 @@
+.notif-title { font-size: 30rpx; font-weight: 600; }
+.notif-content { font-size: 28rpx; color: #606266; margin: 12rpx 0; line-height: 1.6; }
+.notif-time { font-size: 22rpx; }
+.empty { text-align: center; color: #909399; padding: 60rpx 0; }
