@@ -1,0 +1,598 @@
+// 高校学院考研进度管控与智能辅导双端系统 - 数据模型
+// Database: MySQL 8.0
+// 注意:字符串字段使用 @db.VarChar / @db.Text 控制长度,utf8mb4
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============ 枚举 ============
+
+enum UserRole {
+  STUDENT          // 学生
+  COUNSELOR        // 辅导员
+  MAJOR_MENTOR     // 专业导师
+  ACADEMIC_ADMIN   // 教学管理员
+  SYS_ADMIN        // 系统管理员
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  PENDING
+}
+
+// 考研标准化进度标签
+enum StudyStage {
+  NOT_STARTED      // 未开始备考
+  CHOOSING         // 择校阶段
+  BASIC            // 基础复习阶段
+  STRENGTHENING    // 强化刷题阶段
+  SPRINT           // 冲刺阶段
+  EXAM_DONE        // 初试结束待成绩
+  REEXAM_PREP      // 初试通过备战复试
+  ADJUSTING        // 调剂中
+  FINISHED         // 考研结束
+}
+
+enum SchoolTier {
+  NINE_EIGHT_FIVE   // 985
+  TWO_ONE_ONE       // 211
+  DOUBLE_FIRST      // 双一流
+  DOUBLE_NON         // 双非
+}
+
+enum CheckInStatus {
+  ON_TIME      // 按时完成
+  LATE         // 逾期后补
+  MISSING      // 未打卡
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum HelpType {
+  SCHOOL_CHOICE      // 择校困惑
+  SUBJECT_BOTTLENECK // 单科瓶颈
+  MENTAL_STATE       // 心态问题
+  REEXAM_GUIDE       // 复试指导
+  OTHER
+}
+
+enum HelpStatus {
+  OPEN           // 待处理
+  ASSIGNED        // 已分配对接人
+  IN_PROGRESS     // 帮扶中
+  RESOLVED        // 已解决
+  CLOSED          // 已关闭
+}
+
+enum AlertType {
+  CHECKIN_MISSING         // 当周逾期未打卡
+  CHECKIN_CONSECUTIVE     // 连续2周未打卡
+  PROGRESS_STALE          // 连续3周进度无更新
+  PROGRESS_LAGGING        // 进度滞后于平均
+  SCORE_BELOW_LINE        // 初试未达国家线
+  ADJUSTMENT_STUCK        // 调剂无进展
+  LOGIN_INACTIVE          // 连续15天未登录
+}
+
+enum AlertStatus {
+  OPEN
+  HANDLED
+  IGNORED
+}
+
+enum ResourceType {
+  PUBLIC_COURSE   // 公共课资料
+  PROFESSIONAL    // 专业课真题
+  EXPERIENCE      // 学长学姐经验贴
+  REFERENCE_BOOK  // 参考书目
+  ONLINE_COURSE   // 网课
+}
+
+enum ResourceStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  OFFLINE
+}
+
+enum CheckInPeriod {
+  WEEKLY       // 自然周
+  BIWEEKLY     // 双周
+}
+
+// ============ 组织 ============
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  code      String   @db.VarChar(50) @unique
+  parentId  Int?
+  parent    Department? @relation("DeptTree", fields: [parentId], references: [id])
+  children  Department[] @relation("DeptTree")
+  majors    Major[]
+  classes   Class[]
+  users     User[]
+  createdAt DateTime @default(now())
+  @@map("department")
+}
+
+model Major {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  code          String   @db.VarChar(50) @unique
+  departmentId  Int
+  department    Department @relation(fields: [departmentId], references: [id])
+  students      User[]
+  classes       Class[]
+  createdAt      DateTime @default(now())
+  @@map("major")
+}
+
+model Class {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  grade         String   @db.VarChar(20)    // 年级 e.g. 2022
+  majorId       Int
+  major         Major     @relation(fields: [majorId], references: [id])
+  departmentId  Int
+  department    Department @relation(fields: [departmentId], references: [id])
+  counselorId   Int?                       // 辅导员 user id
+  counselor     User?     @relation("ClassCounselor", fields: [counselorId], references: [id])
+  students      User[]
+  createdAt      DateTime @default(now())
+  @@map("class")
+}
+
+// ============ 用户 ============
+
+model User {
+  id              Int        @id @default(autoincrement())
+  studentNo       String?    @db.VarChar(50)    // 学号(学生)
+  staffNo         String?    @db.VarChar(50)    // 工号(导师/管理员)
+  username        String     @db.VarChar(50) @unique   // 学生:真实姓名+学号;导师:工号
+  name            String     @db.VarChar(50)
+  phone           String?    @db.VarChar(20)
+  email           String?    @db.VarChar(100)
+  passwordHash    String     @db.VarChar(255)
+  // 微信小程序登录(学生端)
+  wechatOpenId    String?    @db.VarChar(100) @unique  // 微信 openid
+  wechatUnionId   String?    @db.VarChar(100)          // 微信 unionid(可选)
+  wechatNickname  String?    @db.VarChar(100)          // 微信昵称
+  avatarUrl       String?    @db.VarChar(500)          // 微信头像
+  role            UserRole
+  status          UserStatus @default(ACTIVE)
+  departmentId    Int?
+  department      Department? @relation(fields: [departmentId], references: [id])
+  majorId         Int?                            // 学生:专业;导师:负责专业
+  major           Major?     @relation(fields: [majorId], references: [id])
+  classId         Int?                            // 学生:班级
+  class           Class?     @relation(fields: [classId], references: [id])
+  supervisedClasses Class[] @relation("ClassCounselor")    // 辅导员所带班级
+  studentProfile  StudentProfile?
+  progressHistories ProgressHistory[]
+  lastLoginAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // 学生关联
+  checkInRecords       CheckInRecord[]
+  progressArchive      ProgressArchive?
+  makeupApplications   MakeupCheckInApplication[]
+  approverOf           MakeupCheckInApplication[] @relation("MakeupApprover")
+  aiRecommendations    AIRecommendation[]
+  helpApplications     HelpApplication[]
+  helpAssigneeOf       HelpApplication[] @relation("HelpAssignee")
+  helpRecordsGiven     HelpRecord[]
+  studyPlans           StudyPlan[]
+  watchedBy           WatchedStudent[]  // 哪些导师在重点关注我
+  alerts               Alert[]
+  resourceUploads      Resource[]
+  operationLogs        OperationLog[]
+  batchImports         BatchImport[]
+
+  @@index([role])
+  @@index([departmentId])
+  @@index([majorId])
+  @@index([classId])
+  @@map("user")
+}
+
+model StudentProfile {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique
+  user            User     @relation(fields: [userId], references: [id])
+  // 本科背景(用于 AI 推荐)
+  undergraduateMajor  String? @db.VarChar(100)
+  gpa               Decimal? @db.Decimal(5, 2)
+  majorRank         String? @db.VarChar(50)    // e.g. "5/60"
+  region            String? @db.VarChar(50)    // 意向地区
+  schoolTierPref    SchoolTier?
+  // 优势/弱势科目(JSON 数组)
+  strongSubjects    Json?
+  weakSubjects      Json?
+  careerIntention   String? @db.VarChar(255)
+  enterYear         Int?                       // 本科入学年份
+  // 当前阶段
+  currentStage      StudyStage @default(NOT_STARTED)
+  // 备考剩余时长(月)
+  remainingMonths   Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  @@map("student_profile")
+}
+
+// ============ 打卡 ============
+
+model CheckInRule {
+  id              Int      @id @default(autoincrement())
+  period          CheckInPeriod @default(WEEKLY)
+  weekStartDay    Int      @default(1)        // 1=周一 ... 7=周日
+  startAt         String   @db.VarChar(8) @default("00:00")  // HH:mm
+  endAt           String   @db.VarChar(8) @default("23:59")
+  fridayRemindAt  String   @db.VarChar(8) @default("18:00")
+  sundayAlertAt   String   @db.VarChar(8) @default("20:00")
+  requireStage    Boolean  @default(true)
+  requireCompletedItems Boolean @default(true)
+  requireDifficulties Boolean @default(true)
+  makeupEnabled   Boolean  @default(true)
+  makeupValidDays  Int      @default(3)
+  makeupApproverRole UserRole @default(COUNSELOR)
+  enabled          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  @@map("checkin_rule")
+}
+
+model CheckInRecord {
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  student         User     @relation(fields: [studentId], references: [id])
+  weekStart       DateTime                       // 周一 00:00
+  weekEnd         DateTime                       // 周日 23:59
+  submittedAt     DateTime?
+  status          CheckInStatus @default(MISSING)
+  // 必填
+  stage           StudyStage?
+  completedItems  Json?                          // 勾选事项
+  difficulties    String? @db.Text
+  // 选填
+  studyHours      Decimal? @db.Decimal(6, 1)
+  mockScore       Json?                          // {politics,english,math,major}
+  progressPublic  Decimal? @db.Decimal(5, 2)      // 公共课进度%
+  progressMajor   Decimal? @db.Decimal(5, 2)      // 专业课进度%
+  targetSchoolChanged Boolean @default(false)
+  // 来源: regular 正常打卡 | makeup 补卡
+  source          String   @db.VarChar(20) @default("regular")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([studentId, weekStart])
+  @@index([studentId])
+  @@index([weekStart])
+  @@index([status])
+  @@map("checkin_record")
+}
+
+model MakeupCheckInApplication {
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  student         User     @relation(fields: [studentId], references: [id])
+  weekStart       DateTime
+  reason          String   @db.Text
+  status          ApprovalStatus @default(PENDING)
+  approverId      Int?
+  approver        User?    @relation("MakeupApprover", fields: [approverId], references: [id])
+  approverComment String?  @db.Text
+  handledAt       DateTime?
+  createdAt       DateTime @default(now())
+  @@index([studentId])
+  @@index([status])
+  @@map("makeup_checkin_application")
+}
+
+// ============ 进度档案 ============
+
+model ProgressArchive {
+  id              Int      @id @default(autoincrement())
+  studentId       Int      @unique
+  student         User     @relation(fields: [studentId], references: [id])
+  // 目标院校/专业(可暂存)
+  targetSchoolId  Int?
+  targetSchoolName String? @db.VarChar(100)
+  targetMajor     String?  @db.VarChar(100)
+  // 进度
+  publicCourseProgress Decimal @default(0) @db.Decimal(5, 2)  // %
+  majorCourseProgress   Decimal @default(0) @db.Decimal(5, 2)
+  // 模考
+  mockScores      Json?
+  // 初试
+  examTotal       Int?
+  examPolitics    Int?
+  examEnglish     Int?
+  examMath        Int?
+  examMajor       Int?
+  // 复试
+  reexamProgress  Decimal? @db.Decimal(5, 2)
+  // 调剂
+  adjustmentProgress String? @db.Text
+  // 结果
+  finalResult     String?  @db.VarChar(20)    // ADMITTED / NOT_ADMITTED
+  finalSchool     String?  @db.VarChar(100)
+  // 时间线
+  stageHistory    Json?                          // [{stage, at, note}]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@map("progress_archive")
+}
+
+model ProgressHistory {
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  student         User     @relation(fields: [studentId], references: [id])
+  stage           StudyStage
+  snapshot        Json                          // 当时档案快照
+  createdAt       DateTime @default(now())
+  @@index([studentId])
+  @@map("progress_history")
+}
+
+// ============ 院校数据库 ============
+
+model School {
+  id              Int      @id @default(autoincrement())
+  name            String   @db.VarChar(100) @unique
+  code            String?  @db.VarChar(20)
+  tier            SchoolTier
+  region          String?  @db.VarChar(50)
+  province        String?  @db.VarChar(50)
+  city            String?  @db.VarChar(50)
+  is985           Boolean  @default(false)
+  is211           Boolean  @default(false)
+  isDoubleFirst   Boolean  @default(false)
+  // 院校自定义优先级(学院可设置优先推荐)
+  priorityWeight  Decimal? @db.Decimal(5, 2) @default(1)
+  logoUrl         String?  @db.VarChar(255)
+  website         String?  @db.VarChar(255)
+  programs        MajorProgram[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([tier])
+  @@index([region])
+  @@map("school")
+}
+
+model MajorProgram {
+  id              Int      @id @default(autoincrement())
+  schoolId        Int
+  school          School   @relation(fields: [schoolId], references: [id])
+  majorName       String   @db.VarChar(100)
+  majorCode       String?  @db.VarChar(20)
+  // 近3年数据
+  reportRatio2023 Decimal? @db.Decimal(6, 2)   // 报录比
+  reportRatio2024 Decimal? @db.Decimal(6, 2)
+  reportRatio2025 Decimal? @db.Decimal(6, 2)
+  reexamLine2023  Int?
+  reexamLine2024  Int?
+  reexamLine2025  Int?
+  enrollCount2023 Int?
+  enrollCount2024 Int?
+  enrollCount2025 Int?
+  exemptRatio     Decimal? @db.Decimal(5, 2)   // 推免占比 %
+  examSubjects    Json?                          // 考试科目数组
+  // 学院定制:本院对口升学方向
+  isCollegeAligned Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([schoolId])
+  @@index([majorName])
+  @@map("major_program")
+}
+
+model AIRecommendation {
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  student         User     @relation(fields: [studentId], references: [id])
+  // 输入参数
+  inputParams     Json
+  // 输出方案: [{tier:冲刺/稳妥/保底, items:[{schoolId, schoolName, majorName, matchScore, reasons[], difficulty, risk, probOfAdmission}]}]
+  result          Json
+  // 大模型生成的自然语言总结
+  llmSummary      String?  @db.Text
+  createdAt       DateTime @default(now())
+  feedbacks       AIRecommendationFeedback[]
+  @@index([studentId])
+  @@map("ai_recommendation")
+}
+
+model AIRecommendationFeedback {
+  id              Int      @id @default(autoincrement())
+  recommendationId Int
+  recommendation  AIRecommendation @relation(fields: [recommendationId], references: [id])
+  mentorId        Int
+  itemId          String?  @db.VarChar(50)     // 校准的具体推荐项
+  comment         String   @db.Text
+  adjustment      Json?
+  createdAt       DateTime @default(now())
+  @@map("ai_recommendation_feedback")
+}
+
+// ============ 备考资源 ============
+
+model Resource {
+  id              Int      @id @default(autoincrement())
+  type            ResourceType
+  stage           StudyStage?
+  majorName       String?  @db.VarChar(100)
+  title           String   @db.VarChar(200)
+  description     String?  @db.Text
+  url             String?  @db.VarChar(500)
+  filePath        String?  @db.VarChar(500)
+  uploaderId      Int?
+  uploader        User?    @relation(fields: [uploaderId], references: [id])
+  status          ResourceStatus @default(PENDING_REVIEW)
+  viewCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([type])
+  @@index([stage])
+  @@index([majorName])
+  @@index([status])
+  @@map("resource")
+}
+
+model StudyPlan {
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  student         User     @relation(fields: [studentId], references: [id])
+  monthKey        String?  @db.VarChar(10)     // YYYY-MM
+  weekKey         String?  @db.VarChar(10)     // YYYY-Www
+  tasks           Json                          // [{task, targetHours, done, subject}]
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([studentId])
+  @@map("study_plan")
+}
+
+// ============ 学业帮扶 ============
+
+model HelpApplication {
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  student         User     @relation(fields: [studentId], references: [id])
+  type            HelpType
+  content         String   @db.Text
+  preferredRole   UserRole?
+  status          HelpStatus @default(OPEN)
+  assigneeId      Int?
+  assignee        User?    @relation("HelpAssignee", fields: [assigneeId], references: [id])
+  // 关联打卡(困难一键转化)
+  fromCheckInId   Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  records         HelpRecord[]
+  @@index([studentId])
+  @@index([status])
+  @@index([assigneeId])
+  @@map("help_application")
+}
+
+model HelpRecord {
+  id              Int      @id @default(autoincrement())
+  applicationId   Int
+  application     HelpApplication @relation(fields: [applicationId], references: [id])
+  mentorId        Int
+  mentor          User     @relation(fields: [mentorId], references: [id])
+  content         String   @db.Text
+  effect          String?  @db.Text
+  createdAt       DateTime @default(now())
+  @@index([applicationId])
+  @@map("help_record")
+}
+
+// ============ 预警 ============
+
+model Alert {
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  student         User     @relation(fields: [studentId], references: [id])
+  type            AlertType
+  description     String   @db.VarChar(500)
+  status          AlertStatus @default(OPEN)
+  handledBy       Int?
+  handledAt       DateTime?
+  createdAt       DateTime @default(now())
+  @@index([studentId])
+  @@index([type])
+  @@index([status])
+  @@map("alert")
+}
+
+model WatchedStudent {
+  id              Int      @id @default(autoincrement())
+  studentId       Int
+  student         User     @relation(fields: [studentId], references: [id])
+  mentorId        Int
+  note            String?  @db.Text
+  pinned          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  @@unique([studentId, mentorId])
+  @@map("watched_student")
+}
+
+// ============ 通知 ============
+
+model NotificationLog {
+  id              Int      @id @default(autoincrement())
+  recipientId     Int
+  channel         String   @db.VarChar(20)     // inapp | sms | wechat
+  title           String   @db.VarChar(200)
+  content         String   @db.Text
+  status          String   @db.VarChar(20) @default("pending")  // pending/sent/failed
+  sentAt          DateTime?
+  createdAt       DateTime @default(now())
+  @@index([recipientId])
+  @@map("notification_log")
+}
+
+model KeyNodeReminder {
+  id              Int      @id @default(autoincrement())
+  nodeKey         String   @db.VarChar(50) @unique  // pre_register/register/confirm/exam/score_publish/national_line/reexam/adjust
+  name            String   @db.VarChar(100)
+  remindAt        DateTime                       // 触发提醒的时间点
+  description     String?  @db.Text
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@map("key_node_reminder")
+}
+
+// ============ 后台 ============
+
+model OperationLog {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id])
+  action          String   @db.VarChar(100)
+  target          String?  @db.VarChar(100)
+  detail          Json?
+  ip              String?  @db.VarChar(50)
+  createdAt       DateTime @default(now())
+  @@index([userId])
+  @@index([createdAt])
+  @@map("operation_log")
+}
+
+model BatchImport {
+  id              Int      @id @default(autoincrement())
+  operatorId      Int
+  operator        User     @relation(fields: [operatorId], references: [id])
+  type            String   @db.VarChar(50)     // student/mentor
+  totalCount      Int
+  successCount    Int
+  failCount       Int
+  filePath        String?  @db.VarChar(500)
+  detail          Json?
+  createdAt       DateTime @default(now())
+  @@map("batch_import")
+}
+
+model SystemConfig {
+  id              Int      @id @default(autoincrement())
+  key             String   @db.VarChar(100) @unique
+  value           Json
+  description     String?  @db.VarChar(255)
+  updatedAt       DateTime @updatedAt
+  @@map("system_config")
+}
