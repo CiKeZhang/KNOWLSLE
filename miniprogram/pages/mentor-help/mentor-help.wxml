@@ -41,7 +41,7 @@
 
   <!-- 记录帮扶弹窗 -->
   <view class="modal" wx:if="{{recordModal.visible}}" bindtap="closeRecordModal">
-    <view class="modal-content" catchtap="">
+    <view class="modal-content" catchtap="noop">
       <view class="modal-title">记录帮扶内容</view>
       <textarea
         class="modal-textarea"

@@ -9,6 +9,16 @@ if [ -z "$IP" ]; then
   echo "未检测到局域网 IP，请检查网络连接"
   exit 1
 fi
-sed -i '' "s|http://[0-9.]*:3000/api|http://$IP:3000/api|" "$CONFIG"
-echo "已更新 apiBase 为: http://$IP:3000/api"
-echo "请重新编译小程序"
+sed -i '' "s|apiBase: 'http://[^']*:3000/api'|apiBase: 'http://$IP:3000/api'|" "$CONFIG"
+
+UPDATED=$(grep "apiBase:" "$CONFIG")
+case "$UPDATED" in
+  *"$IP:3000"*)
+    echo "已更新: $UPDATED"
+    echo "请重新编译小程序"
+    ;;
+  *)
+    echo "更新失败,请手动修改 $CONFIG 中的 apiBase"
+    exit 1
+    ;;
+esac

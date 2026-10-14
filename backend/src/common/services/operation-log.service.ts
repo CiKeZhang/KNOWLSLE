@@ -14,12 +14,13 @@ export class OperationLogService {
     userId: number,
     action: string,
     target?: string,
-    detail?: Record<string, unknown>,
+    detail?: unknown,
     ip?: string,
   ) {
     try {
+      const detailStr = detail == null ? undefined : JSON.stringify(detail);
       return await this.prisma.operationLog.create({
-        data: { userId, action, target, detail, ip },
+        data: { userId, action, target, detail: detailStr, ip },
       });
     } catch (e) {
       // 日志失败不应中断业务

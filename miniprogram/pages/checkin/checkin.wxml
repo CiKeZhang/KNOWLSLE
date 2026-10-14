@@ -126,7 +126,7 @@
   <view class="card">
     <view class="card-title">打卡历史</view>
     <view class="history-item" wx:for="{{history}}" wx:key="weekStart">
-      <view class="history-week">{{item.weekStart}}</view>
+      <view class="history-week">{{item.weekStartText || item.weekStart}}</view>
       <view class="history-status">
         <text class="tag {{item.status === 'SUBMITTED' ? 'tag-success' : 'tag-danger'}}">
           {{item.status === 'SUBMITTED' ? '已打卡' : '未打卡'}}

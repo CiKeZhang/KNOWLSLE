@@ -254,6 +254,9 @@ model ProgressArchive {
   // 进度
   publicCourseProgress Decimal @default(0)  // %
   majorCourseProgress   Decimal @default(0)
+  // 分科细化进度 JSON: { <subjectKey>: { name, chapters:[{name, round}] } }
+  // round: 0 未开始 / 1 一轮 / 2 强化 / 3 冲刺
+  subjectProgress String?
   // 模考
   mockScores      String?
   // 初试

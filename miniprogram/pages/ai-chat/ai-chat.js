@@ -1,6 +1,9 @@
 // pages/ai-chat/ai-chat.js
 
 Page({
+  // 空方法:阻止侧边栏面板内的点击事件冒泡到遮罩层导致误关闭
+  noop() {},
+
   data: {
     sessionId: null,
     messages: [],

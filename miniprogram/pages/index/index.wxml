@@ -51,6 +51,10 @@
       <view class="grid-icon icon-teal">🔔</view>
       <view class="grid-text">消息通知</view>
     </view>
+    <view class="grid-item" bindtap="goAdvisor">
+      <view class="grid-icon">👨🏫</view>
+      <view class="grid-text">指导老师</view>
+    </view>
   </view>
 
   <!-- 备考时间线 -->

@@ -4,18 +4,20 @@ const tabbar = require('../../utils/tabbar.js');
 
 Page({
   onTabTap(e) { tabbar.onTap.call(this, e); },
-  data: { userInfo: {}, isMentor: false },
+  data: { userInfo: {}, isMentor: false, isAdmin: false },
 
   onShow() {
     tabbar.refresh(this, 'profile');
     if (!getApp().checkLogin()) return;
     const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo') || {};
     const isMentor = userInfo.role && userInfo.role !== 'STUDENT';
-    this.setData({ userInfo, isMentor });
+    const isAdmin = userInfo.role === 'ACADEMIC_ADMIN' || userInfo.role === 'SYS_ADMIN';
+    this.setData({ userInfo, isMentor, isAdmin });
   },
 
   // 学生功能
   goArchive() { wx.navigateTo({ url: '/pages/archive/archive' }); },
+  goArchiveCollect() { wx.navigateTo({ url: '/pages/archive-collect/archive-collect' }); },
   goRecommend() { wx.navigateTo({ url: '/pages/recommend/recommend' }); },
   goPlan() { wx.navigateTo({ url: '/pages/plan/plan' }); },
   goHelp() { wx.navigateTo({ url: '/pages/help/help' }); },
@@ -29,6 +31,9 @@ Page({
   goMentorStudents() { wx.reLaunch({ url: '/pages/mentor-students/mentor-students' }); },
   goMentorAlerts() { wx.reLaunch({ url: '/pages/mentor-alerts/mentor-alerts' }); },
   goMentorHelp() { wx.reLaunch({ url: '/pages/mentor-help/mentor-help' }); },
+
+  // 管理员功能
+  goMessageAdmin() { wx.navigateTo({ url: '/pages/message-admin/message-admin' }); },
 
   logout() {
     wx.showModal({

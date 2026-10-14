@@ -4,7 +4,7 @@ const tabbar = require('../../utils/tabbar.js');
 
 // 前端简单敏感词预检(仅拦截明显违规,减轻后端压力;最终审核以后端AI为准)
 const SENSITIVE_KEYWORDS = [
-  '加微信', '加vx', '加v', '加QQ', 'qq群', '微信群', '扫码', '二维码',
+  '加微信', '加vx', '加QQ', 'qq群', '微信群', '扫码', '二维码',
   '代购', '代发', '代考', '代做', '代写', '包过', '保过',
   '赌博', '博彩', '色情', '约炮', '一夜情',
 ];
@@ -29,11 +29,13 @@ Page({
     refreshing: false,
     showPublish: false,
     publishContent: '',
-    isAnonymous: false,
     submitting: false,
   },
 
   onTabTap(e) { tabbar.onTap.call(this, e); },
+
+  // 空方法:阻止弹窗面板内的点击事件冒泡到遮罩层导致误关闭
+  noop() {},
 
   onShow() {
     tabbar.refresh(this, 'message-board');
@@ -98,7 +100,7 @@ Page({
   },
 
   openPublish() {
-    this.setData({ showPublish: true, publishContent: '', isAnonymous: false });
+    this.setData({ showPublish: true, publishContent: '' });
   },
 
   closePublish() {
@@ -107,10 +109,6 @@ Page({
 
   onContentInput(e) {
     this.setData({ publishContent: e.detail.value });
-  },
-
-  toggleAnonymous() {
-    this.setData({ isAnonymous: !this.data.isAnonymous });
   },
 
   async submitPublish() {
@@ -140,10 +138,7 @@ Page({
       await getApp().request({
         url: '/message-board/messages',
         method: 'POST',
-        data: {
-          content,
-          isAnonymous: this.data.isAnonymous,
-        },
+        data: { content },
       });
       wx.showToast({ title: '发布成功', icon: 'success' });
       this.setData({ showPublish: false, publishContent: '' });

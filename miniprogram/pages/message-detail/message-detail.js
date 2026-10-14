@@ -2,7 +2,7 @@
 
 // 前端简单敏感词预检
 const SENSITIVE_KEYWORDS = [
-  '加微信', '加vx', '加v', '加QQ', 'qq群', '微信群', '扫码', '二维码',
+  '加微信', '加vx', '加QQ', 'qq群', '微信群', '扫码', '二维码',
   '代购', '代发', '代考', '代做', '代写', '包过', '保过',
   '赌博', '博彩', '色情', '约炮', '一夜情',
 ];
@@ -21,7 +21,6 @@ Page({
     message: null,
     replies: [],
     replyContent: '',
-    isAnonymous: false,
     submitting: false,
     loading: true,
   },
@@ -76,10 +75,6 @@ Page({
     this.setData({ replyContent: e.detail.value });
   },
 
-  toggleAnonymous() {
-    this.setData({ isAnonymous: !this.data.isAnonymous });
-  },
-
   async submitReply() {
     const content = this.data.replyContent.trim();
     if (!content) {
@@ -107,10 +102,7 @@ Page({
       const reply = await getApp().request({
         url: `/message-board/messages/${this.data.messageId}/reply`,
         method: 'POST',
-        data: {
-          content,
-          isAnonymous: this.data.isAnonymous,
-        },
+        data: { content },
       });
       wx.showToast({ title: '回复成功', icon: 'success' });
       this.setData({

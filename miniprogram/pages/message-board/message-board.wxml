@@ -11,9 +11,9 @@
       <view class="msg-header">
         <view class="user-info">
           <image wx:if="{{item.user.avatarUrl}}" class="avatar" src="{{item.user.avatarUrl}}" mode="aspectFill"></image>
-          <view wx:else class="avatar avatar-placeholder">{{item.isAnonymous ? '匿' : item.user.name[0]}}</view>
+          <view wx:else class="avatar avatar-placeholder">{{item.user.name[0]}}</view>
           <view class="user-meta">
-            <view class="user-name">{{item.isAnonymous ? '匿名用户' : item.user.name}}</view>
+            <view class="user-name">{{item.user.name}}</view>
             <view class="msg-time">{{item.timeText}}</view>
           </view>
         </view>
@@ -51,7 +51,7 @@
 
 <!-- 发布弹窗 -->
 <view wx:if="{{showPublish}}" class="publish-modal" catchtap="closePublish">
-  <view class="publish-panel" catchtap="">
+  <view class="publish-panel" catchtap="noop">
     <view class="publish-header">
       <text class="publish-title">发布留言</text>
       <text class="publish-close" bindtap="closePublish">✕</text>
@@ -65,12 +65,6 @@
       auto-height
     />
     <view class="publish-footer">
-      <view class="anonymous-row" bindtap="toggleAnonymous">
-        <view class="checkbox {{isAnonymous ? 'checked' : ''}}">
-          <text wx:if="{{isAnonymous}}">✓</text>
-        </view>
-        <text class="anonymous-label">匿名发布</text>
-      </view>
       <view class="char-count">{{publishContent.length}}/500</view>
     </view>
     <button class="btn-submit" bindtap="submitPublish" disabled="{{submitting}}" loading="{{submitting}}">

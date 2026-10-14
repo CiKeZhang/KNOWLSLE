@@ -40,6 +40,14 @@ export class UpdateArchiveDto {
   @IsObject()
   mockScores?: Record<string, number>;
 
+  @ApiProperty({
+    required: false,
+    description: '分科细化进度 { <科目key>: { name, chapters:[{name, round}] } }, round: 0未开始/1一轮/2强化/3冲刺',
+  })
+  @IsOptional()
+  @IsObject()
+  subjectProgress?: Record<string, unknown>;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @Type(() => Number)

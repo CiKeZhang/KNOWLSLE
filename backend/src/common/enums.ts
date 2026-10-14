@@ -15,11 +15,14 @@ export enum UserStatus {
 
 export enum StudyStage {
   NOT_STARTED = 'NOT_STARTED',
-  FOUNDATION = 'FOUNDATION',
-  STRENGTHEN = 'STRENGTHEN',
+  CHOOSING = 'CHOOSING',
+  BASIC = 'BASIC',
+  STRENGTHENING = 'STRENGTHENING',
   SPRINT = 'SPRINT',
-  EXAM = 'EXAM',
-  ADJUSTMENT = 'ADJUSTMENT',
+  EXAM_DONE = 'EXAM_DONE',
+  REEXAM_PREP = 'REEXAM_PREP',
+  ADJUSTING = 'ADJUSTING',
+  FINISHED = 'FINISHED',
 }
 
 export enum SchoolTier {
@@ -30,9 +33,10 @@ export enum SchoolTier {
 }
 
 export enum CheckInStatus {
-  NORMAL = 'NORMAL',
+  ON_TIME = 'ON_TIME',
   LATE = 'LATE',
   MAKEUP = 'MAKEUP',
+  MISSING = 'MISSING',
   ABSENT = 'ABSENT',
 }
 
@@ -57,13 +61,18 @@ export enum HelpStatus {
 
 export enum AlertType {
   CHECKIN_MISSING = 'CHECKIN_MISSING',
+  CHECKIN_CONSECUTIVE = 'CHECKIN_CONSECUTIVE',
   STAGE_STUCK = 'STAGE_STUCK',
   SCORE_DECLINE = 'SCORE_DECLINE',
+  PROGRESS_STALE = 'PROGRESS_STALE',
+  LOGIN_INACTIVE = 'LOGIN_INACTIVE',
   HELP_REQUEST = 'HELP_REQUEST',
 }
 
 export enum AlertStatus {
+  OPEN = 'OPEN',
   PENDING = 'PENDING',
+  HANDLED = 'HANDLED',
   RESOLVED = 'RESOLVED',
   IGNORED = 'IGNORED',
 }

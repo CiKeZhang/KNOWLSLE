@@ -1,26 +1,48 @@
 <view class="container">
-  <view class="card">
+  <!-- 学生姓名(导师查看时) -->
+  <view class="card" wx:if="{{isMentorView && studentName}}">
+    <view class="student-head">
+      <view class="student-name">{{studentName}}</view>
+      <view class="stage-badge">{{stageLabel}}</view>
+    </view>
+  </view>
+
+  <!-- 当前阶段(学生本人) -->
+  <view class="card" wx:else>
     <view class="card-title">当前阶段</view>
     <view class="stage-badge">{{stageLabel}}</view>
   </view>
 
-  <view class="card" wx:if="{{archive}}">
+  <!-- 指导老师 -->
+  <view class="card">
+    <view class="card-title">指导老师</view>
+    <view class="info-row">
+      <text class="info-label">专业导师</text>
+      <text class="info-value" wx:if="{{advisors.majorMentor}}">{{advisors.majorMentor.name}}<text wx:if="{{advisors.majorMentor.staffNo}}" class="muted"> ({{advisors.majorMentor.staffNo}})</text></text>
+      <text class="info-value muted" wx:else>暂未分配</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">辅导员</text>
+      <text class="info-value" wx:if="{{advisors.counselor}}">{{advisors.counselor.name}}<text wx:if="{{advisors.counselor.staffNo}}" class="muted"> ({{advisors.counselor.staffNo}})</text></text>
+      <text class="info-value muted" wx:else>暂未分配</text>
+    </view>
+    <view class="info-row" wx:if="{{advisors.className}}">
+      <text class="info-label">班级</text>
+      <text class="info-value">{{advisors.className}}</text>
+    </view>
+  </view>
+
+  <!-- 目标院校与考研进度 -->
+  <view class="card">
     <view class="card-title">目标院校</view>
-    <view class="info-row" wx:if="{{archive.targetSchoolName}}">
+    <view class="info-row">
       <text class="info-label">目标院校</text>
-      <text class="info-value">{{archive.targetSchoolName}}</text>
+      <text class="info-value" wx:if="{{archive.targetSchoolName}}">{{archive.targetSchoolName}}</text>
+      <text class="info-value muted" wx:else>暂无,请完善档案</text>
     </view>
     <view class="info-row" wx:if="{{archive.targetMajor}}">
       <text class="info-label">目标专业</text>
       <text class="info-value">{{archive.targetMajor}}</text>
-    </view>
-    <view class="info-row">
-      <text class="info-label">公共课进度</text>
-      <text class="info-value">{{archive.publicCourseProgress || 0}}%</text>
-    </view>
-    <view class="info-row">
-      <text class="info-label">专业课进度</text>
-      <text class="info-value">{{archive.majorCourseProgress || 0}}%</text>
     </view>
     <view class="info-row" wx:if="{{archive.examTotal}}">
       <text class="info-label">初试总分</text>
@@ -32,6 +54,44 @@
     </view>
   </view>
 
+  <!-- 分科细化进度 -->
+  <view class="card">
+    <view class="card-title">考研进度</view>
+
+    <block wx:if="{{hasSubjectProgress}}">
+      <view class="subject" wx:for="{{subjectView}}" wx:for-item="subj" wx:key="key">
+        <view class="subject-head">
+          <text class="subject-name">{{subj.name}}</text>
+          <text class="subject-percent">{{subj.percent}}%</text>
+        </view>
+        <view class="bar"><view class="bar-inner" style="width:{{subj.percent}}%;"></view></view>
+        <view class="chapter-list">
+          <view class="chapter round-{{ch.round}}" wx:for="{{subj.chapters}}" wx:for-item="ch" wx:key="name">
+            <text class="chapter-name">{{ch.name}}</text>
+            <text class="chapter-round">{{ch.roundLabel}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 尚未维护分科进度时,回退显示整体百分比 -->
+    <block wx:else>
+      <view class="info-row">
+        <text class="info-label">公共课进度</text>
+        <text class="info-value">{{archive.publicCourseProgress || 0}}%</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">专业课进度</text>
+        <text class="info-value">{{archive.majorCourseProgress || 0}}%</text>
+      </view>
+      <view class="muted" wx:if="{{!isMentorView}}">点击下方「完善 / 编辑档案」可按科目章节细化进度</view>
+    </block>
+  </view>
+
+  <!-- 学生本人才显示编辑入口 -->
+  <button class="btn-collect" wx:if="{{!isMentorView}}" bindtap="goCollect">完善 / 编辑档案</button>
+
+  <!-- 备考时间线 -->
   <view class="card">
     <view class="card-title">备考时间线</view>
     <view class="timeline" wx:if="{{timeline.length > 0}}">
@@ -39,7 +99,7 @@
         <view class="timeline-dot"></view>
         <view class="timeline-content">
           <view class="timeline-title">{{item.title}}</view>
-          <view class="muted">{{item.desc}}</view>
+          <view class="muted" wx:if="{{item.desc}}">{{item.desc}}</view>
           <view class="muted time">{{item.at}}</view>
         </view>
       </view>

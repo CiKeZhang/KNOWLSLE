@@ -83,7 +83,7 @@
 
 <!-- 会话侧边栏 -->
 <view wx:if="{{showSessions}}" class="session-mask" bindtap="toggleSessions">
-  <view class="session-panel" catchtap="">
+  <view class="session-panel" catchtap="noop">
     <view class="session-header">
       <text class="session-title">历史会话</text>
       <text class="session-close" bindtap="toggleSessions">✕</text>

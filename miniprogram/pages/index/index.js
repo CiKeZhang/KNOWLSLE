@@ -75,5 +75,6 @@ Page({
   goResources() { wx.reLaunch({ url: '/pages/resources/resources' }); },
   goHelp() { wx.navigateTo({ url: '/pages/help/help' }); },
   goNotifications() { wx.navigateTo({ url: '/pages/notifications/notifications' }); },
+  goAdvisor() { wx.navigateTo({ url: '/pages/advisor/advisor' }); },
   goMessageBoard() { wx.reLaunch({ url: '/pages/message-board/message-board' }); },
 });

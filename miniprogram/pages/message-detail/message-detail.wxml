@@ -4,9 +4,9 @@
     <view class="msg-header">
       <view class="user-info">
         <image wx:if="{{message.user.avatarUrl}}" class="avatar" src="{{message.user.avatarUrl}}" mode="aspectFill"></image>
-        <view wx:else class="avatar avatar-placeholder">{{message.isAnonymous ? '匿' : message.user.name[0]}}</view>
+        <view wx:else class="avatar avatar-placeholder">{{message.user.name[0]}}</view>
         <view class="user-meta">
-          <view class="user-name">{{message.isAnonymous ? '匿名用户' : message.user.name}}</view>
+          <view class="user-name">{{message.user.name}}</view>
           <view class="msg-time">{{message.timeText}}</view>
         </view>
       </view>
@@ -32,10 +32,10 @@
     <view class="reply-list">
       <view class="reply-item" wx:for="{{replies}}" wx:key="id">
         <image wx:if="{{item.user.avatarUrl}}" class="reply-avatar" src="{{item.user.avatarUrl}}" mode="aspectFill"></image>
-        <view wx:else class="reply-avatar avatar-placeholder">{{item.isAnonymous ? '匿' : item.user.name[0]}}</view>
+        <view wx:else class="reply-avatar avatar-placeholder">{{item.user.name[0]}}</view>
         <view class="reply-body">
           <view class="reply-header">
-            <text class="reply-name">{{item.isAnonymous ? '匿名用户' : item.user.name}}</text>
+            <text class="reply-name">{{item.user.name}}</text>
             <text class="reply-time">{{item.timeText}}</text>
           </view>
           <view class="reply-content">{{item.content}}</view>
@@ -63,9 +63,6 @@
       confirm-type="send"
       bindconfirm="submitReply"
     />
-  </view>
-  <view class="anon-toggle {{isAnonymous ? 'active' : ''}}" bindtap="toggleAnonymous">
-    {{isAnonymous ? '🔒 匿名' : '🙂 实名'}}
   </view>
   <button class="send-btn" bindtap="submitReply" disabled="{{submitting || !replyContent.trim()}}" loading="{{submitting}}">
     发送

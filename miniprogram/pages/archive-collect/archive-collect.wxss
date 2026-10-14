@@ -1,0 +1,79 @@
+.intro {
+  font-size: 26rpx;
+  color: #67C23A;
+  background: #f0f9eb;
+  border-radius: 12rpx;
+  padding: 16rpx 24rpx;
+  margin-bottom: 24rpx;
+  line-height: 1.5;
+}
+
+.required { color: #F56C6C; }
+.tip { font-size: 24rpx; color: #909399; margin-bottom: 16rpx; }
+
+.form-row {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f2f5;
+}
+
+.form-row:last-child { border-bottom: none; }
+
+.row-label { width: 180rpx; font-size: 28rpx; color: #606266; flex-shrink: 0; }
+.row-input { flex: 1; font-size: 28rpx; }
+.unit { color: #909399; font-size: 26rpx; margin-left: 8rpx; }
+
+/* 分科进度 */
+.subject { margin-bottom: 28rpx; }
+.subject:last-child { margin-bottom: 0; }
+.subject-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+.subject-name { font-size: 28rpx; font-weight: 600; color: #303133; }
+.subject-percent { font-size: 26rpx; color: #409EFF; }
+
+.bar {
+  height: 12rpx;
+  background: #f0f2f5;
+  border-radius: 6rpx;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+}
+.bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #409EFF, #66b1ff);
+  border-radius: 6rpx;
+}
+
+.chapter-list { display: flex; flex-wrap: wrap; }
+.chapter {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 18rpx;
+  border-radius: 28rpx;
+  margin: 0 16rpx 16rpx 0;
+  border: 2rpx solid #dcdfe6;
+  background: #fff;
+}
+.chapter-name { font-size: 24rpx; color: #606266; margin-right: 10rpx; }
+.chapter-round { font-size: 22rpx; color: #909399; }
+
+.chapter.round-1 { border-color: #b3d8ff; background: #ecf5ff; }
+.chapter.round-1 .chapter-name, .chapter.round-1 .chapter-round { color: #409EFF; }
+.chapter.round-2 { border-color: #f5dab1; background: #fdf6ec; }
+.chapter.round-2 .chapter-name, .chapter.round-2 .chapter-round { color: #E6A23C; }
+.chapter.round-3 { border-color: #c2e7b0; background: #f0f9eb; }
+.chapter.round-3 .chapter-name, .chapter.round-3 .chapter-round { color: #67C23A; }
+
+.btn-submit {
+  width: 100%;
+  background: #409EFF;
+  color: #fff;
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  margin-top: 16rpx;
+}

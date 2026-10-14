@@ -9,7 +9,7 @@ import { OperationLogService } from '../common/services/operation-log.service';
 import { WeekUtil } from '../common/utils/week.util';
 import { dayjs } from '../common/utils/week.util';
 import { SubmitCheckInDto, MakeupApplicationDto, ApproveMakeupDto, CheckInFilterDto } from './dto/checkin.dto';
-import { CheckInStatus, StudyStage, AlertType, AlertStatus, ApprovalStatus } from '../common/enums';
+import { CheckInStatus, AlertType, AlertStatus, ApprovalStatus } from '../common/enums';
 
 @Injectable()
 export class CheckInService {
@@ -17,6 +17,30 @@ export class CheckInService {
     private readonly prisma: PrismaService,
     private readonly opLog: OperationLogService,
   ) {}
+
+  /** SQLite 不支持 Prisma 的 Json 类型,数组/对象统一以 JSON 字符串存储 */
+  private toJsonText(value: unknown): string | null {
+    if (value === undefined || value === null) return null;
+    return JSON.stringify(value);
+  }
+
+  private parseJson<T>(text: string | null | undefined, fallback: T): T {
+    if (!text) return fallback;
+    try {
+      return JSON.parse(text) as T;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  /** 解析打卡记录中的 JSON 字符串字段 */
+  private parseRecord(record: any) {
+    return {
+      ...record,
+      completedItems: this.parseJson<string[]>(record.completedItems, []),
+      mockScore: this.parseJson<Record<string, number>>(record.mockScore, {}),
+    };
+  }
 
   /** 获取当前周打卡规则(若未配置则返回默认) */
   async getRule() {
@@ -70,15 +94,29 @@ export class CheckInService {
       where: { studentId, status: ApprovalStatus.PENDING },
     });
 
+    const done = !!record && (record.status === CheckInStatus.ON_TIME || record.status === CheckInStatus.LATE);
+
     return {
       rule,
       weekStart,
       weekEnd,
       weekKey: WeekUtil.weekKey(),
+      weekStartText: `${dayjs(weekStart).format('YYYY-MM-DD')} ~ ${dayjs(weekEnd).format('YYYY-MM-DD')}`,
       inWindow,
       pastDeadline,
       canMakeup,
-      currentRecord: record,
+      // 前端以此判断本周是否已打卡
+      status: done ? 'SUBMITTED' : 'NOT_SUBMITTED',
+      // 当前周记录(数组/对象字段已解析)
+      currentRecord: record ? this.parseRecord(record) : null,
+      // 展平字段(兼容直接读顶层字段的前端)
+      stage: record?.stage ?? '',
+      completedItems: record ? this.parseJson<string[]>(record.completedItems, []) : [],
+      difficulties: record?.difficulties ?? '',
+      studyHours: record && record.studyHours != null ? Number(record.studyHours) : '',
+      onlineConfirmationCompleted: record?.onlineConfirmationCompleted ?? false,
+      mockScore: record ? this.parseJson<Record<string, number>>(record.mockScore, {}) : {},
+      // 历史曲线的 status 保持原值(导师端/报表按 ON_TIME/LATE 统计)
       history: history.map((h) => ({
         weekStart: h.weekStart,
         weekKey: WeekUtil.weekKey(h.weekStart),
@@ -131,11 +169,11 @@ export class CheckInService {
         update: {
           submittedAt: now,
           status,
-          stage: dto.stage as StudyStage,
-          completedItems: dto.completedItems ?? [],
+          stage: dto.stage,
+          completedItems: this.toJsonText(dto.completedItems ?? []),
           difficulties: dto.difficulties,
           studyHours: dto.studyHours,
-          mockScore: dto.mockScore,
+          mockScore: this.toJsonText(dto.mockScore),
           progressPublic: dto.progressPublic,
           progressMajor: dto.progressMajor,
           targetSchoolChanged: dto.targetSchoolChanged ?? false,
@@ -148,11 +186,11 @@ export class CheckInService {
           weekEnd,
           submittedAt: now,
           status,
-          stage: dto.stage as StudyStage,
-          completedItems: dto.completedItems ?? [],
+          stage: dto.stage,
+          completedItems: this.toJsonText(dto.completedItems ?? []),
           difficulties: dto.difficulties,
           studyHours: dto.studyHours,
-          mockScore: dto.mockScore,
+          mockScore: this.toJsonText(dto.mockScore),
           progressPublic: dto.progressPublic,
           progressMajor: dto.progressMajor,
           targetSchoolChanged: dto.targetSchoolChanged ?? false,
@@ -163,29 +201,33 @@ export class CheckInService {
 
       // 同步进度档案(自动联动,无需重复填报)
       if (dto.stage) {
-        await tx.studentProfile.update({
+        // 学生可能尚无档案行(注册时未创建),故用 upsert 而非 update
+        await tx.studentProfile.upsert({
           where: { userId: studentId },
-          data: { currentStage: dto.stage as StudyStage },
+          update: { currentStage: dto.stage },
+          create: { userId: studentId, currentStage: dto.stage },
         });
-        await tx.progressArchive.update({
+        const archiveData = {
+          publicCourseProgress: dto.progressPublic ?? undefined,
+          majorCourseProgress: dto.progressMajor ?? undefined,
+          mockScores: this.toJsonText(dto.mockScore) ?? undefined,
+        };
+        await tx.progressArchive.upsert({
           where: { studentId },
-          data: {
-            publicCourseProgress: dto.progressPublic ?? undefined,
-            majorCourseProgress: dto.progressMajor ?? undefined,
-            mockScores: dto.mockScore ?? undefined,
-          },
+          update: archiveData,
+          create: { studentId, ...archiveData },
         });
         // 写进度历史轨迹
         await tx.progressHistory.create({
           data: {
             studentId,
-            stage: dto.stage as StudyStage,
-            snapshot: {
+            stage: dto.stage,
+            snapshot: this.toJsonText({
               weekStart: weekStart.toISOString(),
               studyHours: dto.studyHours,
               progressPublic: dto.progressPublic,
               progressMajor: dto.progressMajor,
-            },
+            }) as string,
           },
         });
       }
@@ -206,7 +248,7 @@ export class CheckInService {
     await this.opLog.record(studentId, 'submit_checkin', `week:${WeekUtil.weekKey()}`, {
       stage: dto.stage,
     });
-    return result;
+    return this.parseRecord(result);
   }
 
   /** 学生:申请补卡 */
@@ -318,6 +360,7 @@ export class CheckInService {
     const calendar = records.map((r) => ({
       weekStart: r.weekStart,
       weekKey: WeekUtil.weekKey(r.weekStart),
+      weekStartText: dayjs(r.weekStart).format('YYYY-MM-DD'),
       status: r.status,
       stage: r.stage,
       studyHours: Number(r.studyHours),
@@ -336,7 +379,12 @@ export class CheckInService {
       orderBy: { createdAt: 'desc' },
       take: 20,
     });
-    return { calendar, streak, makeupApplications };
+    // 列表项:把状态映射为前端使用的 SUBMITTED / NOT_SUBMITTED
+    const items = calendar.map((c) => ({
+      ...c,
+      status: c.status === CheckInStatus.ON_TIME || c.status === CheckInStatus.LATE ? 'SUBMITTED' : 'NOT_SUBMITTED',
+    }));
+    return { calendar, items, streak, makeupApplications };
   }
 
   /** 导师端:打卡统计(管辖范围内) */

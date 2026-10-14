@@ -4,6 +4,10 @@ const tabbar = require('../../utils/tabbar.js');
 
 Page({
   onTabTap(e) { tabbar.onTap.call(this, e); },
+
+  // 空方法:阻止弹窗面板内的点击事件冒泡到遮罩层导致误关闭
+  noop() {},
+
   data: {
     applications: [],
     loading: true,

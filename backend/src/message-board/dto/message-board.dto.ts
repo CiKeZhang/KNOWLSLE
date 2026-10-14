@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsOptional, MaxLength, MinLength, IsInt, Min } from 'class-validator';
+import { IsString, IsOptional, MaxLength, MinLength, IsInt, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /** 发布留言 DTO */
@@ -8,11 +8,15 @@ export class CreateMessageDto {
   @MinLength(1, { message: '留言内容不能为空' })
   @MaxLength(500, { message: '留言内容不能超过500字' })
   content: string;
+}
 
-  @ApiPropertyOptional({ description: '是否匿名发布', default: false })
-  @IsOptional()
-  @IsBoolean()
-  isAnonymous?: boolean;
+/** 编辑留言 DTO（本人或管理员） */
+export class UpdateMessageDto {
+  @ApiProperty({ description: '修改后的留言内容', maxLength: 500 })
+  @IsString()
+  @MinLength(1, { message: '留言内容不能为空' })
+  @MaxLength(500, { message: '留言内容不能超过500字' })
+  content: string;
 }
 
 /** 回复留言 DTO */
@@ -22,11 +26,6 @@ export class CreateReplyDto {
   @MinLength(1, { message: '回复内容不能为空' })
   @MaxLength(300, { message: '回复内容不能超过300字' })
   content: string;
-
-  @ApiPropertyOptional({ description: '是否匿名回复', default: false })
-  @IsOptional()
-  @IsBoolean()
-  isAnonymous?: boolean;
 }
 
 /** 留言列表查询 DTO */

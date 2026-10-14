@@ -1,0 +1,57 @@
+<view class="container">
+  <view class="admin-tip">
+    <text class="tip-icon">🛡️</text>
+    <text class="tip-text">留言管理：可编辑/删除任意留言，修改后内容重新经 AI 审核</text>
+  </view>
+
+  <view class="msg-card" wx:for="{{list}}" wx:key="id">
+    <view class="msg-header">
+      <view class="user-name">{{item.user.name}}<text class="username">（{{item.user.username}}）</text></view>
+      <view class="audit-badge {{item.auditStatus === 'APPROVED' ? 'ok' : 'bad'}}">
+        {{item.auditStatus === 'APPROVED' ? '已通过' : '未通过'}}
+      </view>
+    </view>
+    <view class="msg-content">{{item.content}}</view>
+    <view wx:if="{{item.auditStatus !== 'APPROVED' && item.auditResult}}" class="audit-reason">
+      拦截原因：{{item.auditResult}}
+    </view>
+    <view class="msg-footer">
+      <text class="msg-time">{{item.timeText}}</text>
+      <text class="msg-stat">❤️ {{item.likeCount}} · 💬 {{item.replyCount}}</text>
+      <view class="action-btns">
+        <view class="btn edit" catchtap="openEdit" data-id="{{item.id}}" data-content="{{item.content}}">编辑</view>
+        <view class="btn delete" catchtap="deleteMessage" data-id="{{item.id}}">删除</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{list.length === 0 && !loading}}" class="empty">
+    <view class="empty-icon">💭</view>
+    <view class="empty-text">暂无留言</view>
+  </view>
+  <view wx:if="{{loading}}" class="load-more">加载中...</view>
+  <view wx:if="{{!loading && list.length > 0 && list.length >= total}}" class="load-more end">— 没有更多了 —</view>
+</view>
+
+<!-- 编辑弹窗 -->
+<view wx:if="{{editVisible}}" class="modal" catchtap="closeEdit">
+  <view class="modal-panel" catchtap="noop">
+    <view class="modal-title">编辑留言</view>
+    <textarea
+      class="modal-textarea"
+      placeholder="修改留言内容（500字以内）"
+      value="{{editContent}}"
+      bindinput="onEditInput"
+      maxlength="500"
+      auto-height
+    />
+    <view class="modal-count">{{editContent.length}}/500</view>
+    <view class="modal-btns">
+      <button class="btn-cancel" bindtap="closeEdit">取消</button>
+      <button class="btn-save" bindtap="submitEdit" disabled="{{submitting}}" loading="{{submitting}}">
+        {{submitting ? '保存中...' : '保存'}}
+      </button>
+    </view>
+    <view class="modal-hint">🔒 保存后内容将重新经过 AI 审核</view>
+  </view>
+</view>

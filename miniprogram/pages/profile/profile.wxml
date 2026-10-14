@@ -18,6 +18,10 @@
       <text>考研档案</text>
       <text class="arrow">›</text>
     </view>
+    <view class="menu-item" bindtap="goArchiveCollect">
+      <text>信息采集</text>
+      <text class="arrow">›</text>
+    </view>
     <view class="menu-item" bindtap="goRecommend">
       <text>AI 择校</text>
       <text class="arrow">›</text>
@@ -52,6 +56,10 @@
     </view>
     <view class="menu-item" bindtap="goMentorHelp">
       <text>帮扶申请</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="menu-item" wx:if="{{isAdmin}}" bindtap="goMessageAdmin">
+      <text>留言管理</text>
       <text class="arrow">›</text>
     </view>
     <view class="menu-item" bindtap="goNotifications">

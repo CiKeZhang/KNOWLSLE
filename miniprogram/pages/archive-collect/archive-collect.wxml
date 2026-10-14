@@ -1,0 +1,57 @@
+<view class="container">
+  <view class="intro" wx:if="{{fromCheckin}}">✅ 本周打卡已完成,再完善一下考研档案,让导师看到你的目标和进度吧</view>
+
+  <view class="card">
+    <view class="card-title">目标院校 <text class="required">*</text></view>
+    <view class="form-row">
+      <text class="row-label">目标院校</text>
+      <input class="row-input" placeholder="如:华中科技大学" value="{{form.targetSchoolName}}" bindinput="onSchoolInput" maxlength="60" />
+    </view>
+    <view class="form-row">
+      <text class="row-label">目标专业</text>
+      <input class="row-input" placeholder="如:管理科学与工程" value="{{form.targetMajor}}" bindinput="onMajorInput" maxlength="60" />
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">分科考研进度</view>
+    <view class="tip">点击章节切换复习轮次:未开始 → 一轮 → 强化 → 冲刺</view>
+    <view class="subject" wx:for="{{subjectView}}" wx:for-item="subj" wx:key="key">
+      <view class="subject-head">
+        <text class="subject-name">{{subj.name}}</text>
+        <text class="subject-percent">{{subj.percent}}%</text>
+      </view>
+      <view class="bar"><view class="bar-inner" style="width:{{subj.percent}}%;"></view></view>
+      <view class="chapter-list">
+        <view
+          class="chapter round-{{ch.round}}"
+          wx:for="{{subj.chapters}}"
+          wx:for-item="ch"
+          wx:for-index="ci"
+          wx:key="name"
+          data-key="{{subj.key}}"
+          data-idx="{{ci}}"
+          bindtap="onChapterTap"
+        >
+          <text class="chapter-name">{{ch.name}}</text>
+          <text class="chapter-round">{{ch.roundLabel}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">备考信息(选填)</view>
+    <view class="form-row">
+      <text class="row-label">意向地区</text>
+      <input class="row-input" placeholder="如:湖北武汉" value="{{form.region}}" bindinput="onRegionInput" maxlength="30" />
+    </view>
+    <view class="form-row">
+      <text class="row-label">剩余备考</text>
+      <input class="row-input" type="digit" placeholder="月" value="{{form.remainingMonths}}" bindinput="onMonthsInput" />
+      <text class="unit">个月</text>
+    </view>
+  </view>
+
+  <button class="btn-submit" bindtap="submit" loading="{{submitting}}">保存到考研档案</button>
+</view>

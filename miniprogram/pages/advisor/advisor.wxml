@@ -1,0 +1,7 @@
+<view class="container">
+  <view class="placeholder">
+    <view class="placeholder-icon">👨🏫</view>
+    <view class="placeholder-title">指导老师</view>
+    <view class="placeholder-desc">功能建设中，敬请期待</view>
+  </view>
+</view>

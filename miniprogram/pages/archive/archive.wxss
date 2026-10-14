@@ -7,6 +7,22 @@
   font-size: 28rpx;
 }
 
+.student-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.student-name { font-size: 34rpx; font-weight: 600; }
+
+.btn-collect {
+  width: 100%;
+  background: #409EFF;
+  color: #fff;
+  border-radius: 48rpx;
+  font-size: 30rpx;
+  margin-bottom: 24rpx;
+}
+
 .info-row {
   display: flex;
   padding: 16rpx 0;
@@ -22,3 +38,45 @@
 .timeline-title { font-size: 28rpx; margin-bottom: 4rpx; }
 .time { font-size: 22rpx; margin-top: 4rpx; }
 .empty { text-align: center; color: #909399; padding: 40rpx 0; }
+
+/* 分科进度(只读) */
+.subject { margin-bottom: 28rpx; }
+.subject:last-child { margin-bottom: 0; }
+.subject-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+.subject-name { font-size: 28rpx; font-weight: 600; color: #303133; }
+.subject-percent { font-size: 26rpx; color: #409EFF; }
+.bar {
+  height: 12rpx;
+  background: #f0f2f5;
+  border-radius: 6rpx;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+}
+.bar-inner {
+  height: 100%;
+  background: linear-gradient(90deg, #409EFF, #66b1ff);
+  border-radius: 6rpx;
+}
+.chapter-list { display: flex; flex-wrap: wrap; }
+.chapter {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 18rpx;
+  border-radius: 28rpx;
+  margin: 0 16rpx 16rpx 0;
+  border: 2rpx solid #dcdfe6;
+  background: #fff;
+}
+.chapter-name { font-size: 24rpx; color: #606266; margin-right: 10rpx; }
+.chapter-round { font-size: 22rpx; color: #909399; }
+.chapter.round-1 { border-color: #b3d8ff; background: #ecf5ff; }
+.chapter.round-1 .chapter-name, .chapter.round-1 .chapter-round { color: #409EFF; }
+.chapter.round-2 { border-color: #f5dab1; background: #fdf6ec; }
+.chapter.round-2 .chapter-name, .chapter.round-2 .chapter-round { color: #E6A23C; }
+.chapter.round-3 { border-color: #c2e7b0; background: #f0f9eb; }
+.chapter.round-3 .chapter-name, .chapter.round-3 .chapter-round { color: #67C23A; }

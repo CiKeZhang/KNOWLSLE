@@ -77,7 +77,7 @@ export class MentorService {
       where: {
         studentId: { in: studentIds },
         weekStart,
-        status: { in: [CheckInStatus.NORMAL, CheckInStatus.LATE] },
+        status: { in: [CheckInStatus.ON_TIME, CheckInStatus.LATE] },
       },
     });
 
@@ -86,7 +86,7 @@ export class MentorService {
       where: {
         studentId: { in: studentIds },
         weekStart,
-        status: { in: [CheckInStatus.NORMAL, CheckInStatus.LATE] },
+        status: { in: [CheckInStatus.ON_TIME, CheckInStatus.LATE] },
       },
       select: { studentId: true },
     });

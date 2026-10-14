@@ -15,12 +15,30 @@ export class ContentAuditService {
   private readonly logger = new Logger(ContentAuditService.name);
 
   // 本地关键词黑名单(兜底用)
+  // 注意:只保留明确的广告/引流特征词,避免误杀考研正常讨论(如"购买资料""报辅导班""对答案")
   private readonly adKeywords = [
-    '加微信', '加vx', '加v', '加QQ', 'qq群', '微信群', '扫码', '二维码',
-    '代购', '代发', '代考', '代做', '代写', '包过', '保过', '答案',
-    '卖资料', '出售', '购买', '点击链接', 'http://', 'https://', 'www.',
-    '赚钱', '兼职', '日结', '刷单', '推广', '引流', '关注公众号',
-    '考研辅导班', '保录', '内部资料', '绝密', '押题',
+    '加微信', '加vx', '加QQ', 'qq群', '微信群', '扫码', '二维码',
+    '代购', '代发', '代考', '代做', '代写', '包过', '保过',
+    '卖资料', '点击链接', 'http://', 'https://', 'www.',
+    '日结', '刷单', '引流', '关注公众号',
+    '保录', '内部资料', '绝密',
+  ];
+
+  // 交易意图词(弱特征):单独出现不拦截——考研买书买课是正常讨论
+  private readonly tradeWords = [
+    '购买', '出售', '转让', '低价', '便宜卖', '包邮', '下单', '优惠', '团购', '拼团',
+  ];
+
+  // 与考研无关的商品词:与交易词共现时判定为广告(如"购买中秋月饼")
+  private readonly productWords = [
+    '月饼', '面膜', '化妆品', '口红', '护肤品', '减肥', '保险', '贷款',
+    '手机', '平板', 'ipad', '演唱会', '门票', '球鞋', '水果', '零食',
+  ];
+
+  // 学习相关词:出现时不将交易词判定为广告(如"购买复习资料""团购网课")
+  private readonly studyWords = [
+    '资料', '书', '课', '题', '真题', '讲义', '单词', '笔记',
+    '政治', '英语', '数学', '专业课', '复习', '备考',
   ];
 
   private readonly illegalKeywords = [
@@ -151,6 +169,17 @@ ${content}
     if (adFound.length > 0) {
       foundCategories.push('ad');
       reasons.push(`包含广告推广关键词: ${adFound.slice(0, 3).join('、')}`);
+    }
+
+    // 组合判定:交易词 + 非学习商品词 → 广告(区分"购买资料"与"购买月饼")
+    const tradeFound = this.tradeWords.filter((k) => lowerContent.includes(k.toLowerCase()));
+    if (tradeFound.length > 0) {
+      const hasStudy = this.studyWords.some((k) => lowerContent.includes(k.toLowerCase()));
+      const productFound = this.productWords.filter((k) => lowerContent.includes(k.toLowerCase()));
+      if (!hasStudy && productFound.length > 0) {
+        foundCategories.push('ad');
+        reasons.push(`包含广告推广内容: ${tradeFound[0]}、${productFound[0]}`);
+      }
     }
 
     // 检查违法关键词

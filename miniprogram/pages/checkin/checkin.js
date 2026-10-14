@@ -140,6 +140,7 @@ Page({
       await getApp().request({ url: '/checkin/me/submit', method: 'POST', data: payload });
       wx.showToast({ title: '打卡成功', icon: 'success' });
       this.loadCheckin();
+      this.gotoCollectIfNeeded();
     } catch (e) {
       // 网络异常:本地缓存
       try {
@@ -152,6 +153,21 @@ Page({
       }
     } finally {
       this.setData({ submitting: false });
+    }
+  },
+
+  // 打卡成功后:若档案还没有目标院校,进入信息采集环节
+  async gotoCollectIfNeeded() {
+    try {
+      const data = await getApp().request({ url: '/progress/me' });
+      const hasTarget = data.archive && data.archive.targetSchoolName;
+      if (!hasTarget) {
+        setTimeout(() => {
+          wx.navigateTo({ url: '/pages/archive-collect/archive-collect?from=checkin' });
+        }, 800);
+      }
+    } catch (e) {
+      // 静默,不阻断打卡流程
     }
   },
 
