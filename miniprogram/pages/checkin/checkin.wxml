@@ -65,22 +65,49 @@
       ></textarea>
     </view>
 
-    <!-- 选填项 -->
+    <!-- 选填项:学习时长 + 分科进度(从档案同步) -->
     <view class="card">
       <view class="card-title">4. 补充信息(选填)</view>
       <view class="form-row">
         <text class="row-label">本周学习时长</text>
         <input class="row-input" type="digit" placeholder="小时" value="{{form.studyHours}}" bindinput="onHoursInput" />
       </view>
-      <view class="form-row">
-        <text class="row-label">公共课进度</text>
-        <slider class="row-slider" min="0" max="100" value="{{form.progressPublic}}" bindchange="onPublicProgress" />
-        <text class="progress-value">{{form.progressPublic}}%</text>
-      </view>
-      <view class="form-row">
-        <text class="row-label">专业课进度</text>
-        <slider class="row-slider" min="0" max="100" value="{{form.progressMajor}}" bindchange="onMajorProgress" />
-        <text class="progress-value">{{form.progressMajor}}%</text>
+
+      <!-- 分科细化进度展示(从考研档案同步) -->
+      <view class="progress-section" wx:if="{{hasSubjectProgress || subjectView.length > 0}}">
+        <view class="progress-head">
+          <text class="progress-title">分科复习进度</text>
+          <text class="progress-update" bindtap="goUpdateProgress">更新 ›</text>
+        </view>
+
+        <block wx:if="{{hasSubjectProgress}}">
+          <view class="subject" wx:for="{{subjectView}}" wx:for-item="subj" wx:key="key">
+            <view class="subject-head">
+              <text class="subject-name">{{subj.name}}</text>
+              <text class="subject-percent">{{subj.percent}}%</text>
+            </view>
+            <view class="bar"><view class="bar-inner" style="width:{{subj.percent}}%;"></view></view>
+            <view class="chapter-list">
+              <view class="chapter round-{{ch.round}}" wx:for="{{subj.chapters}}" wx:for-item="ch" wx:key="name">
+                <text class="chapter-name">{{ch.name}}</text>
+                <text class="chapter-round">{{ch.roundLabel}}</text>
+              </view>
+            </view>
+          </view>
+        </block>
+
+        <!-- 尚未维护分科进度 -->
+        <block wx:else>
+          <view class="form-row">
+            <text class="row-label">公共课进度</text>
+            <text class="progress-value">{{archivePublic}}%</text>
+          </view>
+          <view class="form-row">
+            <text class="row-label">专业课进度</text>
+            <text class="progress-value">{{archiveMajor}}%</text>
+          </view>
+          <view class="muted">还没维护分科进度? 点右上角「更新」快速设置</view>
+        </block>
       </view>
     </view>
 
@@ -114,6 +141,31 @@
       <view class="detail-row" wx:if="{{checkin.onlineConfirmationCompleted}}">
         <text class="detail-label">网上确认</text>
         <text class="detail-value success">✅ 已完成</text>
+      </view>
+
+      <!-- 分科进度(从考研档案同步) -->
+      <view class="progress-section" wx:if="{{hasSubjectProgress}}">
+        <view class="progress-head">
+          <text class="progress-title">分科复习进度</text>
+          <text class="progress-update" bindtap="goUpdateProgress">更新 ›</text>
+        </view>
+        <view class="subject" wx:for="{{subjectView}}" wx:for-item="subj" wx:key="key">
+          <view class="subject-head">
+            <text class="subject-name">{{subj.name}}</text>
+            <text class="subject-percent">{{subj.percent}}%</text>
+          </view>
+          <view class="bar"><view class="bar-inner" style="width:{{subj.percent}}%;"></view></view>
+          <view class="chapter-list">
+            <view class="chapter round-{{ch.round}}" wx:for="{{subj.chapters}}" wx:for-item="ch" wx:key="name">
+              <text class="chapter-name">{{ch.name}}</text>
+              <text class="chapter-round">{{ch.roundLabel}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="detail-row" wx:elif="{{archivePublic || archiveMajor}}">
+        <text class="detail-label">总体进度</text>
+        <text class="detail-value">公共课 {{archivePublic}}% · 专业课 {{archiveMajor}}%</text>
       </view>
     </view>
 

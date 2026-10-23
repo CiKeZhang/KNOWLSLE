@@ -43,6 +43,7 @@ App({
             }
           } else if (res.statusCode === 401) {
             // token 过期,清除并跳转登录
+            try { wx.hideLoading(); } catch (e) {}
             wx.removeStorageSync('token');
             wx.removeStorageSync('userInfo');
             this.globalData.token = '';

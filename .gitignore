@@ -48,3 +48,6 @@ backend/backups/
 # Node
 .node-version
 .nvmrc
+
+# Trae IDE 临时文件
+.trae/

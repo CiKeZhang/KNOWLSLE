@@ -25,6 +25,7 @@ const CHECK_ITEMS = [
 ];
 
 const tabbar = require('../../utils/tabbar.js');
+const subjectsUtil = require('../../utils/subjects.js');
 
 Page({
   onTabTap(e) { tabbar.onTap.call(this, e); },
@@ -39,12 +40,16 @@ Page({
       completedItems: [],
       difficulties: '',
       studyHours: '',
-      progressPublic: 0,
-      progressMajor: 0,
       onlineConfirmationCompleted: false,
     },
     submitting: false,
     history: [],
+    // 分科进度(从考研档案同步)
+    subjectView: [],
+    hasSubjectProgress: false,
+    archivePublic: 0,
+    archiveMajor: 0,
+    targetSchool: '',
   },
 
   onShow() {
@@ -52,10 +57,11 @@ Page({
     if (!getApp().checkLogin()) return;
     this.loadCheckin();
     this.loadHistory();
+    this.loadProgressArchive();
   },
 
   onPullDownRefresh() {
-    Promise.all([this.loadCheckin(), this.loadHistory()]).then(() => wx.stopPullDownRefresh());
+    Promise.all([this.loadCheckin(), this.loadHistory(), this.loadProgressArchive()]).then(() => wx.stopPullDownRefresh());
   },
 
   async loadCheckin() {
@@ -76,13 +82,37 @@ Page({
     }
   },
 
+  // 加载考研档案,同步分科进度到打卡页展示
+  async loadProgressArchive() {
+    try {
+      const data = await getApp().request({ url: '/progress/me' });
+      const arc = data && data.archive ? data.archive : null;
+      if (!arc) {
+        this.setData({ subjectView: [], hasSubjectProgress: false, archivePublic: 0, archiveMajor: 0, targetSchool: '' });
+        return;
+      }
+      const sp = arc.subjectProgress || null;
+      var view = subjectsUtil.buildView(sp);
+      var hasAny = sp && view.some(function (s) { return s.percent > 0; });
+      var overall = subjectsUtil.overall(sp);
+      this.setData({
+        subjectView: view,
+        hasSubjectProgress: !!hasAny,
+        archivePublic: overall.public || arc.publicCourseProgress || 0,
+        archiveMajor: overall.major || arc.majorCourseProgress || 0,
+        targetSchool: arc.targetSchoolName ? (arc.targetSchoolName + (arc.targetMajor ? ' · ' + arc.targetMajor : '')) : '',
+      });
+    } catch (e) {
+      // 静默
+    }
+  },
+
   selectStage(e) {
     this.setData({ 'form.stage': e.currentTarget.dataset.value });
   },
 
   toggleCheckItem(e) {
     const id = e.currentTarget.dataset.id;
-    // 切换 checkItems 中对应项的 checked,并同步 completedItems
     const items = this.data.checkItems.map((it) => (
       it.id === id ? { id: it.id, text: it.text, checked: !it.checked } : it
     ));
@@ -98,16 +128,13 @@ Page({
     this.setData({ 'form.studyHours': e.detail.value });
   },
 
-  onPublicProgress(e) {
-    this.setData({ 'form.progressPublic': e.detail.value });
-  },
-
-  onMajorProgress(e) {
-    this.setData({ 'form.progressMajor': e.detail.value });
-  },
-
   toggleOnlineConfirmation() {
     this.setData({ 'form.onlineConfirmationCompleted': !this.data.form.onlineConfirmationCompleted });
+  },
+
+  // 跳到信息采集页更新分科进度
+  goUpdateProgress() {
+    wx.navigateTo({ url: '/pages/archive-collect/archive-collect?from=checkin' });
   },
 
   async submit() {
@@ -131,8 +158,9 @@ Page({
       completedItems,
       difficulties: difficulties.trim(),
       studyHours: this.data.form.studyHours ? Number(this.data.form.studyHours) : undefined,
-      progressPublic: this.data.form.progressPublic,
-      progressMajor: this.data.form.progressMajor,
+      // 从档案分科进度自动算出整体百分比,保持后端字段一致
+      progressPublic: this.data.archivePublic,
+      progressMajor: this.data.archiveMajor,
       onlineConfirmationCompleted: this.data.form.onlineConfirmationCompleted,
     };
 
