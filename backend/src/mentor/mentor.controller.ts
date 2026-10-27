@@ -124,7 +124,7 @@ export class MentorController {
   }
 
   @Post('watch/:studentId')
-  @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR)
+  @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN)
   @ApiOperation({ summary: '标记重点关注学生' })
   watch(
     @Param('studentId', ParseIntPipe) studentId: number,
@@ -135,7 +135,7 @@ export class MentorController {
   }
 
   @Delete('watch/:studentId')
-  @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR)
+  @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN)
   @ApiOperation({ summary: '取消重点关注' })
   unwatch(@Param('studentId', ParseIntPipe) studentId: number, @CurrentUser() user: AuthUser) {
     return this.mentor.unwatchStudent(studentId, user.id);
