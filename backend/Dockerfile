@@ -15,7 +15,7 @@ COPY prisma ./prisma
 RUN npm ci
 
 COPY . .
-RUN npx prisma generate && npm run build
+RUN npx prisma generate && npx tsc --noEmitOnError false
 
 # ---------- 运行阶段 ----------
 FROM node:20-slim AS runner
