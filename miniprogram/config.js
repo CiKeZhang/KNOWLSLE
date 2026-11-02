@@ -13,7 +13,7 @@ module.exports = {
   // 微信云托管配置(mode=cloud 时生效)
   // cloudEnv: 云开发环境ID,在小程序后台「云开发」控制台查看,形如 prod-1a2b3c4d
   // cloudService: 云托管服务名称,创建服务时填写的名字
-  cloudEnv: '',
+  cloudEnv: 'cloud1-d8giir28cf5405408',
   cloudService: 'kygl-backend',
 
   // 学院专业列表(注册选择 + 按专业统计)
