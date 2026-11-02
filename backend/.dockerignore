@@ -5,6 +5,7 @@ coverage
 .env.*
 *.db
 *.db-journal
+!prisma/dev.db
 *.log
 uploads
 backups
