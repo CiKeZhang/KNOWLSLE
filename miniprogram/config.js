@@ -14,7 +14,7 @@ module.exports = {
   // cloudEnv: 云开发环境ID,在小程序后台「云开发」控制台查看,形如 prod-1a2b3c4d
   // cloudService: 云托管服务名称,创建服务时填写的名字
   cloudEnv: 'cloud1-d8giir28cf5405408',
-  cloudService: 'kygl-backend',
+  cloudService: 'kyglbackend',
 
   // 学院专业列表(注册选择 + 按专业统计)
   majors: ['信息管理', '电子商务', '财务管理', '经济学', '市场营销'],
