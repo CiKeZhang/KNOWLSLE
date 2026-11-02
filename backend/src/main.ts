@@ -26,6 +26,9 @@ async function bootstrap() {
   // 全局前缀
   app.setGlobalPrefix('api');
 
+  // 健康检查(不在 /api 前缀下,云托管健康检查用)
+  app.use('/health', (req, res) => res.json({ ok: true, time: Date.now() }));
+
   // 安全与压缩中间件
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(compression());

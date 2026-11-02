@@ -1,41 +1,32 @@
-# 考研进度管控与智能辅导系统 - 后端镜像
-# 构建: docker build -t kygl-backend .
-# 运行: docker compose up -d
+# 考研进度管控 - 极简 Dockerfile
+# 策略: 能省就省,只要 node dist/main 能起来就行
 
-# ---------- 构建阶段 ----------
-FROM node:20-slim AS builder
-WORKDIR /app
-
-# Prisma 引擎依赖 openssl
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY package*.json ./
-COPY prisma ./prisma
-RUN npm ci
-
-COPY . .
-RUN npx prisma generate && (npx tsc --noEmitOnError false || true)
-
-# ---------- 运行阶段 ----------
-FROM node:20-slim AS runner
+FROM node:20-slim
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
+# 只有 Prisma 引擎需要 openssl
+RUN apt-get update -qq && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# 复制所有源码 + 依赖声明
 COPY package*.json ./
 COPY prisma ./prisma
-# 保留完整 node_modules(含 prisma CLI,启动时用于同步表结构)
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
+COPY src ./src
+COPY tsconfig.json ./
 
-COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh && mkdir -p /app/data
+# 装依赖 + Prisma 生成 + TS 编译
+# tsc 有既存类型错误,用 || true 让构建继续,但 dist/ 必须产出
+RUN npm ci --no-audit --no-fund \
+    && npx prisma generate \
+    && (./node_modules/.bin/tsc --noEmitOnError false || true) \
+    && ls dist/src/main.js  # 关键:必须存在,否则让它真失败
+
+RUN mkdir -p /app/data /app/uploads
 
 EXPOSE 3000
 
-CMD ["./docker-entrypoint.sh"]
+# NestJS 编译产物在 dist/src/main.js(不是 dist/main.js!)
+CMD ["node", "--max-old-space-size=512", "dist/src/main.js"]
