@@ -1,0 +1,32 @@
+# 生产/试运营部署配置
+# 启动: docker compose up -d --build
+# 日志: docker compose logs -f
+services:
+  backend:
+    build: .
+    container_name: kygl-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # 数据库文件放在持久化卷中,容器重建不丢数据
+      - DATABASE_URL=file:/app/data/kygl.db
+    volumes:
+      - kygl-data:/app/data
+      - kygl-uploads:/app/uploads
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/docs').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  kygl-data:
+  kygl-uploads:

@@ -10,12 +10,14 @@ import { WeekUtil } from '../common/utils/week.util';
 import { dayjs } from '../common/utils/week.util';
 import { SubmitCheckInDto, MakeupApplicationDto, ApproveMakeupDto, CheckInFilterDto } from './dto/checkin.dto';
 import { CheckInStatus, AlertType, AlertStatus, ApprovalStatus } from '../common/enums';
+import { AiDifficultyService } from '../ai/services/ai-difficulty.service';
 
 @Injectable()
 export class CheckInService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly opLog: OperationLogService,
+    private readonly aiDifficulty: AiDifficultyService,
   ) {}
 
   /** SQLite 不支持 Prisma 的 Json 类型,数组/对象统一以 JSON 字符串存储 */
@@ -39,6 +41,7 @@ export class CheckInService {
       ...record,
       completedItems: this.parseJson<string[]>(record.completedItems, []),
       mockScore: this.parseJson<Record<string, number>>(record.mockScore, {}),
+      aiResourceIds: this.parseJson<number[]>(record.aiResourceIds, []),
     };
   }
 
@@ -248,7 +251,56 @@ export class CheckInService {
     await this.opLog.record(studentId, 'submit_checkin', `week:${WeekUtil.weekKey()}`, {
       stage: dto.stage,
     });
+
+    // 异步触发 AI 困难分析(不阻塞打卡返回)
+    if (dto.difficulties?.trim()) {
+      setImmediate(() => {
+        this.analyzeDifficultyAsync(result.id, dto.difficulties, dto.stage, studentId)
+          .catch((e) => this.opLog.record(studentId, 'ai_analyze_error', '', { error: e?.message }));
+      });
+    }
+
     return this.parseRecord(result);
+  }
+
+  /**
+   * 异步分析备考困难并保存结果到打卡记录
+   * 失败不影响打卡主流程
+   */
+  private async analyzeDifficultyAsync(
+    recordId: number,
+    difficulties: string,
+    stage: string | undefined,
+    studentId: number,
+  ) {
+    try {
+      const majorName = await this.getStudentMajorName(studentId);
+      const analysis = await this.aiDifficulty.analyze(difficulties, { majorName, stage });
+      await this.prisma.checkInRecord.update({
+        where: { id: recordId },
+        data: {
+          aiCategory: analysis.category,
+          aiAdvice: analysis.advice,
+          aiResourceIds: this.toJsonText(analysis.matchedResourceIds),
+        },
+      });
+      await this.opLog.record(studentId, 'ai_analyze_difficulty', `record:${recordId}`, {
+        category: analysis.category,
+        source: analysis.source,
+        resourceCount: analysis.matchedResourceIds.length,
+      });
+    } catch (e) {
+      console.warn(`AI 困难分析失败 record:${recordId}: ${e?.message ?? ''}`);
+    }
+  }
+
+  /** 获取学生专业名称(用于资源匹配) */
+  private async getStudentMajorName(studentId: number): Promise<string | undefined> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: studentId },
+      select: { majorName: true },
+    });
+    return user?.majorName ?? undefined;
   }
 
   /** 学生:申请补卡 */

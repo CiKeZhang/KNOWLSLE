@@ -212,6 +212,10 @@ model CheckInRecord {
   targetSchoolChanged Boolean @default(false)
   // 网上确认是否完成（考研报名关键节点）
   onlineConfirmationCompleted Boolean @default(false)
+  // AI 困难分析结果(打卡提交后异步生成)
+  aiCategory       String?      // knowledge_gap | time_mgmt | mindset | method | other
+  aiAdvice         String?      // AI 生成的具体建议文案
+  aiResourceIds    String?      // 匹配资源 ID 列表(JSON 字符串,如 [1,5,12])
   // 来源: regular 正常打卡 | makeup 补卡
   source          String @default("regular")
   createdAt       DateTime @default(now())

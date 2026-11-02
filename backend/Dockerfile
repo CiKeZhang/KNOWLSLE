@@ -1,23 +1,41 @@
-# 后端 Dockerfile - 多阶段构建
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install --legacy-peer-deps
-COPY . .
-RUN npx prisma generate
-RUN npm run build
+# 考研进度管控与智能辅导系统 - 后端镜像
+# 构建: docker build -t kygl-backend .
+# 运行: docker compose up -d
 
-FROM node:18-alpine AS production
+# ---------- 构建阶段 ----------
+FROM node:20-slim AS builder
 WORKDIR /app
-ENV NODE_ENV=production
-RUN apk add --no-cache openssl mysql-client gzip
+
+# Prisma 引擎依赖 openssl
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
-RUN npm install --omit=dev --legacy-peer-deps
+COPY prisma ./prisma
+RUN npm ci
+
+COPY . .
+RUN npx prisma generate && npm run build
+
+# ---------- 运行阶段 ----------
+FROM node:20-slim AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY package*.json ./
+COPY prisma ./prisma
+# 保留完整 node_modules(含 prisma CLI,启动时用于同步表结构)
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-RUN mkdir -p /app/uploads /app/backups
+
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh && mkdir -p /app/data
+
 EXPOSE 3000
-# 启动前执行迁移,然后启动服务
-CMD npx prisma migrate deploy && node dist/main.js
+
+CMD ["./docker-entrypoint.sh"]

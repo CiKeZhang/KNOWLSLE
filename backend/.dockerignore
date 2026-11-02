@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+*.db
+*.db-journal
+*.log
+uploads
+backups
+.git
+.DS_Store

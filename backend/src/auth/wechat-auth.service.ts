@@ -168,33 +168,51 @@ export class WechatAuthService {
         },
       });
     } else {
-      // 新用户:检查学号是否已被其他 openid 占用
+      // 按学号查找已存在账号(可能 openid 为空,处于"待重新绑定"状态)
       const existingByStudentNo = await this.prisma.user.findFirst({
         where: { studentNo, role: UserRole.STUDENT },
       });
-      if (existingByStudentNo && existingByStudentNo.wechatOpenId && existingByStudentNo.wechatOpenId !== openid) {
-        throw new BadRequestException('该学号已被其他微信账号绑定,请联系管理员');
-      }
 
-      // 创建学生用户(passwordHash 为空字符串,表示仅微信登录)
-      user = await this.prisma.user.create({
-        data: {
-          username,
-          name,
-          studentNo,
-          majorName,
-          phone,
-          passwordHash: '', // 微信登录用户无密码
-          role: UserRole.STUDENT,
-          status: UserStatus.ACTIVE,
-          wechatOpenId: openid,
-          wechatNickname: nickname,
-          avatarUrl,
-          // 初始化学生档案
-          studentProfile: { create: {} },
-          progressArchive: { create: {} },
-        },
-      });
+      if (existingByStudentNo) {
+        if (existingByStudentNo.wechatOpenId && existingByStudentNo.wechatOpenId !== openid) {
+          // 已绑定其他微信且不是当前 openid → 拒绝
+          throw new BadRequestException('该学号已被其他微信账号绑定,请联系管理员');
+        }
+        // openid 为空(被清空/迁移)或正好等于当前 openid → 回绑,继承全部历史数据
+        user = await this.prisma.user.update({
+          where: { id: existingByStudentNo.id },
+          data: {
+            name,
+            studentNo,
+            username,
+            majorName,
+            phone: phone ?? existingByStudentNo.phone,
+            wechatOpenId: openid,
+            wechatNickname: nickname ?? existingByStudentNo.wechatNickname,
+            avatarUrl: avatarUrl ?? existingByStudentNo.avatarUrl,
+            lastLoginAt: new Date(),
+          },
+        });
+      } else {
+        // 真·新学生,创建账号
+        user = await this.prisma.user.create({
+          data: {
+            username,
+            name,
+            studentNo,
+            majorName,
+            phone,
+            passwordHash: '',
+            role: UserRole.STUDENT,
+            status: UserStatus.ACTIVE,
+            wechatOpenId: openid,
+            wechatNickname: nickname,
+            avatarUrl,
+            studentProfile: { create: {} },
+            progressArchive: { create: {} },
+          },
+        });
+      }
     }
 
     return this.issueToken(user, openid);
