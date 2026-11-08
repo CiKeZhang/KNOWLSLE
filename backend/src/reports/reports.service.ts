@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WeekUtil, dayjs } from '../common/utils/week.util';
 import { CryptoUtil } from '../common/utils/crypto.util';
 import { CheckInStatus } from '../common/enums';
+import { buildStudentScope, ScopeActor } from '../common/utils/student-scope';
 
 @Injectable()
 export class ReportsService {
@@ -19,11 +20,12 @@ export class ReportsService {
     classId?: number;
     semester?: string; // YYYY-S1 / YYYY-S2
     month?: string;     // YYYY-MM
-  }) {
-    const studentWhere: Record<string, unknown> = { role: 'STUDENT', status: 'ACTIVE' };
-    if (params.departmentId) studentWhere.departmentId = params.departmentId;
-    if (params.majorId) studentWhere.majorId = params.majorId;
-    if (params.classId) studentWhere.classId = params.classId;
+  }, actor: ScopeActor) {
+    const studentWhere = await buildStudentScope(this.prisma, actor, {
+      ...(params.departmentId ? { departmentId: params.departmentId } : {}),
+      ...(params.majorId ? { majorId: params.majorId } : {}),
+      ...(params.classId ? { classId: params.classId } : {}),
+    });
     const students = await this.prisma.user.findMany({
       where: studentWhere,
       include: {
@@ -113,13 +115,14 @@ export class ReportsService {
     majorId?: number;
     classId?: number;
     weekStart?: Date;
-  }) {
+  }, actor: ScopeActor) {
     const weekStart = params.weekStart ?? WeekUtil.weekStart();
     const weekEnd = WeekUtil.weekEnd(weekStart);
-    const studentWhere: Record<string, unknown> = { role: 'STUDENT', status: 'ACTIVE' };
-    if (params.departmentId) studentWhere.departmentId = params.departmentId;
-    if (params.majorId) studentWhere.majorId = params.majorId;
-    if (params.classId) studentWhere.classId = params.classId;
+    const studentWhere = await buildStudentScope(this.prisma, actor, {
+      ...(params.departmentId ? { departmentId: params.departmentId } : {}),
+      ...(params.majorId ? { majorId: params.majorId } : {}),
+      ...(params.classId ? { classId: params.classId } : {}),
+    });
 
     const students = await this.prisma.user.findMany({
       where: studentWhere,
@@ -180,8 +183,8 @@ export class ReportsService {
     departmentId?: number;
     majorId?: number;
     classId?: number;
-  }) {
-    const summary = await this.summary(params);
+  }, actor: ScopeActor) {
+    const summary = await this.summary(params, actor);
     return new Promise<{ buffer: Buffer; filename: string; contentType: string }>((resolve) => {
       const doc = new PDFDocument({ size: 'A4', margin: 40 });
       const chunks: Buffer[] = [];
@@ -219,8 +222,8 @@ export class ReportsService {
   }
 
   /** 全院维度打卡数据总览(支持按学期/月份) */
-  async checkinAnalysis(params: { semester?: string; month?: string }) {
-    const summary = await this.summary(params);
+  async checkinAnalysis(params: { semester?: string; month?: string }, actor: ScopeActor) {
+    const summary = await this.summary(params, actor);
     // 按月份的打卡趋势
     const since = params.semester
       ? new Date(parseInt(params.semester.slice(0, 4)), params.semester.endsWith('1') ? 8 : 2, 1)

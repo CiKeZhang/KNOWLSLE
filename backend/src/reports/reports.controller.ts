@@ -25,6 +25,7 @@ export class ReportsController {
   @Roles(UserRole.ACADEMIC_ADMIN, UserRole.SYS_ADMIN, UserRole.COUNSELOR, UserRole.MAJOR_MENTOR)
   @ApiOperation({ summary: '学院考研工作报表(参与率/阶段分布/打卡完成率/上岸情况)' })
   summary(
+    @CurrentUser() user: AuthUser,
     @Query('departmentId') departmentId?: string,
     @Query('majorId') majorId?: string,
     @Query('classId') classId?: string,
@@ -37,7 +38,7 @@ export class ReportsController {
       classId: classId ? Number(classId) : undefined,
       semester,
       month,
-    });
+    }, { id: user.id, role: user.role });
   }
 
   @Get('export/checkin-excel')
@@ -45,6 +46,7 @@ export class ReportsController {
   @ApiOperation({ summary: '导出周度打卡统计表 Excel' })
   async exportCheckinExcel(
     @Res() res: Response,
+    @CurrentUser() user: AuthUser,
     @Query('departmentId') departmentId?: string,
     @Query('majorId') majorId?: string,
     @Query('classId') classId?: string,
@@ -55,7 +57,7 @@ export class ReportsController {
       majorId: majorId ? Number(majorId) : undefined,
       classId: classId ? Number(classId) : undefined,
       weekStart: weekStart ? new Date(weekStart) : undefined,
-    });
+    }, { id: user.id, role: user.role });
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -69,6 +71,7 @@ export class ReportsController {
   @ApiOperation({ summary: '导出进度汇总表 PDF' })
   async exportProgressPdf(
     @Res() res: Response,
+    @CurrentUser() user: AuthUser,
     @Query('departmentId') departmentId?: string,
     @Query('majorId') majorId?: string,
     @Query('classId') classId?: string,
@@ -77,7 +80,7 @@ export class ReportsController {
       departmentId: departmentId ? Number(departmentId) : undefined,
       majorId: majorId ? Number(majorId) : undefined,
       classId: classId ? Number(classId) : undefined,
-    });
+    }, { id: user.id, role: user.role });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(result.filename)}"`);
     res.send(result.buffer);
@@ -87,9 +90,10 @@ export class ReportsController {
   @Roles(UserRole.ACADEMIC_ADMIN, UserRole.SYS_ADMIN)
   @ApiOperation({ summary: '全院打卡数据分析(支持按学期/月份,可导出)' })
   checkinAnalysis(
+    @CurrentUser() user: AuthUser,
     @Query('semester') semester?: string,
     @Query('month') month?: string,
   ) {
-    return this.reports.checkinAnalysis({ semester, month });
+    return this.reports.checkinAnalysis({ semester, month }, { id: user.id, role: user.role });
   }
 }

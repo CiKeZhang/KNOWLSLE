@@ -176,11 +176,26 @@ Page({
       getApp().globalData.userInfo = data.user;
 
       wx.showToast({ title: '登录成功', icon: 'success' });
-      setTimeout(() => {
-        const isMentor = data.user.role && data.user.role !== 'STUDENT';
-        const homeUrl = isMentor ? '/pages/mentor-dashboard/mentor-dashboard' : '/pages/index/index';
-        wx.reLaunch({ url: homeUrl });
-      }, 800);
+      const isMentor = data.user.role && data.user.role !== 'STUDENT';
+      if (isMentor) {
+        setTimeout(() => {
+          wx.reLaunch({ url: '/pages/mentor-dashboard/mentor-dashboard' });
+        }, 800);
+        return;
+      }
+      // 学生:未选择导师时先引导选择
+      getApp().request({ url: '/mentor/my-mentor' }).then((mentor) => {
+        const target = mentor
+          ? '/pages/index/index'
+          : '/pages/mentor-select/mentor-select?from=login';
+        setTimeout(() => {
+          wx.reLaunch({ url: target });
+        }, 800);
+      }).catch(() => {
+        setTimeout(() => {
+          wx.reLaunch({ url: '/pages/index/index' });
+        }, 800);
+      });
     }).catch(() => {
       that.setData({ submitting: false });
     });

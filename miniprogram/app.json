@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/login/login",
+    "pages/mentor-select/mentor-select",
     "pages/index/index",
     "pages/checkin/checkin",
     "pages/archive/archive",

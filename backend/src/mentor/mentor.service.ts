@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OperationLogService } from '../common/services/operation-log.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WeekUtil, dayjs } from '../common/utils/week.util';
+import { buildStudentScope } from '../common/utils/student-scope';
 import { AlertType, AlertStatus, CheckInStatus, HelpStatus, HelpType } from '../common/enums';
 
 @Injectable()
@@ -353,7 +354,7 @@ export class MentorService {
     return result;
   }
 
-  /** 构建导师管辖范围的学生筛选条件(权限隔离) */
+  /** 构建导师管辖范围的学生筛选条件(权限隔离,统一走 student-scope) */
   private async buildStudentScope(params: {
     mentorId: number;
     role: string;
@@ -361,27 +362,50 @@ export class MentorService {
     majorId?: number;
     departmentId?: number;
   }): Promise<Record<string, unknown>> {
-    const where: Record<string, unknown> = { role: 'STUDENT', status: 'ACTIVE' };
-    if (params.role === 'COUNSELOR') {
-      where.OR = [
-        { class: { counselorId: params.mentorId } },
-        ...(params.classId ? [{ classId: params.classId }] : []),
-      ];
-    } else if (params.role === 'MAJOR_MENTOR') {
-      // 专业导师:负责专业(majorName 优先;兼容 majorId)
-      let majorName: string | undefined;
-      const me = await this.prisma.user.findUnique({
-        where: { id: params.mentorId },
-        select: { majorName: true, majorId: true },
-      });
-      majorName = me?.majorName ?? undefined;
-      if (majorName) where.majorName = majorName;
-      else if (me?.majorId) where.majorId = me.majorId;
-    } else if (params.role === 'ACADEMIC_ADMIN' || params.role === 'SYS_ADMIN') {
-      // 学院管理员/系统管理员:看全院所有学生
-      if (params.departmentId) where.departmentId = params.departmentId;
-      if (params.classId) where.classId = params.classId;
-    }
-    return where;
+    const extra: Record<string, unknown> = {};
+    if (params.departmentId) extra.departmentId = params.departmentId;
+    if (params.majorId) extra.majorId = params.majorId;
+    if (params.classId) extra.classId = params.classId;
+    return buildStudentScope(this.prisma, { id: params.mentorId, role: params.role }, extra);
+  }
+
+  /** 学生端: 可选导师列表 */
+  async listSelectableMentors() {
+    const mentors = await this.prisma.user.findMany({
+      where: { role: 'MAJOR_MENTOR', status: 'ACTIVE' },
+      select: { id: true, name: true, staffNo: true, majorName: true },
+      orderBy: { id: 'asc' },
+    });
+    return mentors;
+  }
+
+  /** 学生端: 查看已选导师 */
+  async getMyMentor(studentId: number) {
+    const me = await this.prisma.user.findUnique({
+      where: { id: studentId },
+      select: {
+        mentorId: true,
+        mentor: { select: { id: true, name: true, staffNo: true } },
+      },
+    });
+    return me?.mentor ?? null;
+  }
+
+  /** 学生端: 选择/更换导师 */
+  async selectMentor(studentId: number, mentorId: number) {
+    const mentor = await this.prisma.user.findFirst({
+      where: {
+        id: mentorId,
+        role: { in: ['MAJOR_MENTOR', 'COUNSELOR'] },
+        status: 'ACTIVE',
+      },
+      select: { id: true, name: true },
+    });
+    if (!mentor) throw new BadRequestException('导师不存在或不可选');
+    await this.prisma.user.update({
+      where: { id: studentId },
+      data: { mentorId: mentor.id },
+    });
+    return { mentorId: mentor.id, mentorName: mentor.name };
   }
 }

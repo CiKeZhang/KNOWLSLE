@@ -49,6 +49,9 @@
 
 .arrow { color: #c0c4cc; font-size: 32rpx; }
 
+.menu-right { display: flex; align-items: center; }
+.menu-value { color: #909399; font-size: 26rpx; margin-right: 8rpx; }
+
 .btn-logout {
   width: 100%;
   background: #fff;

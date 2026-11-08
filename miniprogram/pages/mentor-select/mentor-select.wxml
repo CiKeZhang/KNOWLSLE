@@ -1,0 +1,37 @@
+<view class="container">
+  <view class="intro">
+    <view class="intro-title">{{currentMentor ? '我的指导老师' : '请选择你的指导老师'}}</view>
+    <view class="intro-desc">{{currentMentor ? '如需更换,可在下方重新选择' : '选择后,老师才能看到你的备考进度并提供指导'}}</view>
+  </view>
+
+  <view class="current-card" wx:if="{{currentMentor}}">
+    <view class="current-avatar">师</view>
+    <view class="current-info">
+      <view class="current-name">{{currentMentor.name}}</view>
+      <view class="current-sub">工号:{{currentMentor.staffNo || '-'}}</view>
+    </view>
+    <view class="current-tag">已选择</view>
+  </view>
+
+  <view class="search-box">
+    <input class="search-input" placeholder="搜索老师姓名或工号" value="{{keyword}}" bindinput="onKeywordInput" confirm-type="search" />
+  </view>
+
+  <view wx:if="{{loading}}" class="tips">加载中...</view>
+  <view wx:elif="{{shownMentors.length === 0}}" class="tips">暂无可选择的老师</view>
+  <view class="mentor-list" wx:else>
+    <view class="mentor-item" wx:for="{{shownMentors}}" wx:key="id" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="chooseMentor">
+      <view class="mentor-avatar">{{item.initial}}</view>
+      <view class="mentor-info">
+        <view class="mentor-name">
+          <text>{{item.name}}</text>
+          <text class="mentor-tag" wx:if="{{item.isSelected}}">当前</text>
+        </view>
+        <view class="mentor-sub">工号:{{item.staffNo || '-'}}</view>
+      </view>
+      <view class="mentor-arrow">›</view>
+    </view>
+  </view>
+
+  <view class="skip" wx:if="{{fromLogin}}" bindtap="skip">暂不选择,先进入首页</view>
+</view>

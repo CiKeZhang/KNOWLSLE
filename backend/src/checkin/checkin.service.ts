@@ -11,6 +11,7 @@ import { dayjs } from '../common/utils/week.util';
 import { SubmitCheckInDto, MakeupApplicationDto, ApproveMakeupDto, CheckInFilterDto } from './dto/checkin.dto';
 import { CheckInStatus, AlertType, AlertStatus, ApprovalStatus } from '../common/enums';
 import { AiDifficultyService } from '../ai/services/ai-difficulty.service';
+import { buildStudentScope } from '../common/utils/student-scope';
 
 @Injectable()
 export class CheckInService {
@@ -450,38 +451,30 @@ export class CheckInService {
     const weekStart = params.weekStart ?? WeekUtil.weekStart();
     const weekEnd = WeekUtil.weekEnd(weekStart);
 
-    // 确定管辖范围:辅导员->所带班级;专业导师->所负责专业;管理员->全院
-    const studentWhere: Record<string, unknown> = { role: 'STUDENT', status: 'ACTIVE' };
-    if (params.role === 'COUNSELOR') {
-      const classes = await this.prisma.class.findMany({
-        where: { counselorId: params.mentorId },
-        select: { id: true },
-      });
-      studentWhere.classId = { in: classes.map((c) => c.id) };
-    } else if (params.role === 'MAJOR_MENTOR') {
-      const me = await this.prisma.user.findUnique({
-        where: { id: params.mentorId },
-        select: { majorId: true },
-      });
-      studentWhere.majorId = me?.majorId;
-    }
-    if (params.classId) studentWhere.classId = params.classId;
-    if (params.majorId) studentWhere.majorId = params.majorId;
+    // 确定管辖范围(统一走 student-scope,未选导师的导师看不到任何学生)
+    const studentWhere = await buildStudentScope(this.prisma, { id: params.mentorId, role: params.role }, {
+      ...(params.classId ? { classId: params.classId } : {}),
+      ...(params.majorId ? { majorId: params.majorId } : {}),
+    });
 
-    const totalStudents = await this.prisma.user.count({ where: studentWhere });
+    const scopeIds = (
+      await this.prisma.user.findMany({ where: studentWhere, select: { id: true } })
+    ).map((u) => u.id);
+    const totalStudents = scopeIds.length;
 
     const checkedIn = await this.prisma.checkInRecord.count({
       where: {
-        studentId: { in: (await this.prisma.user.findMany({ where: studentWhere, select: { id: true } })).map((u) => u.id) },
+        studentId: { in: scopeIds },
         weekStart,
         status: { in: [CheckInStatus.ON_TIME, CheckInStatus.LATE] },
       },
     });
 
-    // 连续打卡人数:本周 ON_TIME/LATE 且 上周也完成
+    // 连续打卡人数:本周 ON_TIME/LATE 且 上周也完成(限管辖范围)
     const thisWeekIds = (
       await this.prisma.checkInRecord.findMany({
         where: {
+          studentId: { in: scopeIds },
           weekStart,
           status: { in: [CheckInStatus.ON_TIME, CheckInStatus.LATE] },
         },
@@ -503,7 +496,7 @@ export class CheckInService {
     // 近 12 周趋势
     const since = dayjs(weekStart).subtract(11, 'week').toDate();
     const trendRecords = await this.prisma.checkInRecord.findMany({
-      where: { weekStart: { gte: since, lte: weekStart } },
+      where: { studentId: { in: scopeIds }, weekStart: { gte: since, lte: weekStart } },
       select: { weekStart: true, status: true },
     });
     const trend: Array<{ weekKey: string; onTime: number; late: number; missing: number }> = [];
@@ -542,22 +535,10 @@ export class CheckInService {
     majorId?: number;
   }) {
     const weekStart = WeekUtil.weekStart();
-    const studentWhere: Record<string, unknown> = { role: 'STUDENT', status: 'ACTIVE' };
-    if (params.role === 'COUNSELOR') {
-      const classes = await this.prisma.class.findMany({
-        where: { counselorId: params.mentorId },
-        select: { id: true },
-      });
-      studentWhere.classId = { in: classes.map((c) => c.id) };
-    } else if (params.role === 'MAJOR_MENTOR') {
-      const me = await this.prisma.user.findUnique({
-        where: { id: params.mentorId },
-        select: { majorId: true },
-      });
-      studentWhere.majorId = me?.majorId;
-    }
-    if (params.classId) studentWhere.classId = params.classId;
-    if (params.majorId) studentWhere.majorId = params.majorId;
+    const studentWhere = await buildStudentScope(this.prisma, { id: params.mentorId, role: params.role }, {
+      ...(params.classId ? { classId: params.classId } : {}),
+      ...(params.majorId ? { majorId: params.majorId } : {}),
+    });
 
     const students = await this.prisma.user.findMany({
       where: studentWhere,
@@ -591,20 +572,7 @@ export class CheckInService {
     const where: Record<string, unknown> = {};
     if (params.status) where.status = params.status;
     // 权限过滤:仅能看到管辖范围内的学生申请
-    const studentWhere: Record<string, unknown> = { role: 'STUDENT' };
-    if (params.role === 'COUNSELOR') {
-      const classes = await this.prisma.class.findMany({
-        where: { counselorId: params.approverId },
-        select: { id: true },
-      });
-      studentWhere.classId = { in: classes.map((c) => c.id) };
-    } else if (params.role === 'MAJOR_MENTOR') {
-      const me = await this.prisma.user.findUnique({
-        where: { id: params.approverId },
-        select: { majorId: true },
-      });
-      studentWhere.majorId = me?.majorId;
-    }
+    const studentWhere = await buildStudentScope(this.prisma, { id: params.approverId, role: params.role });
     const studentIds = (
       await this.prisma.user.findMany({ where: studentWhere, select: { id: true } })
     ).map((u) => u.id);

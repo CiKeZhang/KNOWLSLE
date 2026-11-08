@@ -5,6 +5,7 @@ export interface AuthUser {
   username: string;
   name: string;
   role: string;
+  staffNo?: string;
   departmentId?: number;
   majorId?: number;
   classId?: number;

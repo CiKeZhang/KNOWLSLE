@@ -109,6 +109,9 @@ model User {
   classId         Int?                            // 学生:班级
   class           Class?     @relation(fields: [classId], references: [id])
   supervisedClasses Class[] @relation("ClassCounselor")    // 辅导员所带班级
+  mentorId        Int?                                     // 学生选择的导师(学生端"选择教师")
+  mentor          User?      @relation("StudentMentor", fields: [mentorId], references: [id])
+  mentees         User[]     @relation("StudentMentor")    // 选择了本人作为导师的学生
   studentProfile  StudentProfile?
   progressHistories ProgressHistory[]
   lastLoginAt     DateTime?

@@ -4,7 +4,7 @@ const tabbar = require('../../utils/tabbar.js');
 
 Page({
   onTabTap(e) { tabbar.onTap.call(this, e); },
-  data: { userInfo: {}, isMentor: false, isAdmin: false },
+  data: { userInfo: {}, isMentor: false, isAdmin: false, myMentor: null },
 
   onShow() {
     tabbar.refresh(this, 'profile');
@@ -13,9 +13,19 @@ Page({
     const isMentor = userInfo.role && userInfo.role !== 'STUDENT';
     const isAdmin = userInfo.role === 'ACADEMIC_ADMIN' || userInfo.role === 'SYS_ADMIN';
     this.setData({ userInfo, isMentor, isAdmin });
+    if (!isMentor) this.loadMyMentor();
+  },
+
+  // 学生:当前指导老师
+  loadMyMentor() {
+    const that = this;
+    getApp().request({ url: '/mentor/my-mentor' }).then((mentor) => {
+      that.setData({ myMentor: mentor || null });
+    }).catch(() => {});
   },
 
   // 学生功能
+  goMentorSelect() { wx.navigateTo({ url: '/pages/mentor-select/mentor-select' }); },
   goArchive() { wx.navigateTo({ url: '/pages/archive/archive' }); },
   goArchiveCollect() { wx.navigateTo({ url: '/pages/archive-collect/archive-collect' }); },
   goRecommend() { wx.navigateTo({ url: '/pages/recommend/recommend' }); },

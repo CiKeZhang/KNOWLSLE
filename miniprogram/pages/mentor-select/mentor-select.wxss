@@ -1,0 +1,99 @@
+.intro { padding: 16rpx 8rpx 24rpx; }
+.intro-title { font-size: 38rpx; font-weight: 600; color: #303133; }
+.intro-desc { margin-top: 8rpx; font-size: 26rpx; color: #909399; line-height: 1.6; }
+
+.current-card {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #409EFF, #337ecc);
+  border-radius: 16rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 24rpx;
+  color: #fff;
+}
+
+.current-avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+  margin-right: 24rpx;
+}
+
+.current-info { flex: 1; }
+.current-name { font-size: 34rpx; font-weight: 600; }
+.current-sub { font-size: 26rpx; opacity: 0.9; margin-top: 4rpx; }
+.current-tag {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.search-box { margin-bottom: 24rpx; }
+.search-input {
+  background: #fff;
+  border-radius: 40rpx;
+  padding: 20rpx 32rpx;
+  font-size: 28rpx;
+}
+
+.mentor-list {
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.mentor-item {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 32rpx;
+  border-bottom: 1rpx solid #f0f2f5;
+}
+
+.mentor-item:last-child { border-bottom: none; }
+
+.mentor-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: #ecf5ff;
+  color: #409EFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  margin-right: 24rpx;
+}
+
+.mentor-info { flex: 1; }
+.mentor-name { font-size: 30rpx; color: #303133; }
+.mentor-tag {
+  margin-left: 12rpx;
+  font-size: 20rpx;
+  color: #409EFF;
+  background: #ecf5ff;
+  padding: 2rpx 12rpx;
+  border-radius: 12rpx;
+}
+.mentor-sub { font-size: 24rpx; color: #909399; margin-top: 6rpx; }
+.mentor-arrow { color: #c0c4cc; font-size: 34rpx; }
+
+.tips {
+  text-align: center;
+  color: #909399;
+  font-size: 28rpx;
+  padding: 80rpx 0;
+}
+
+.skip {
+  margin-top: 32rpx;
+  text-align: center;
+  color: #909399;
+  font-size: 26rpx;
+  padding: 20rpx 0;
+}

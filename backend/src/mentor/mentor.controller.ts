@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { IsString, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsInt } from 'class-validator';
 import { MentorService } from './mentor.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -45,12 +45,38 @@ class WatchDto {
   note?: string;
 }
 
+class SelectMentorDto {
+  @IsInt()
+  mentorId: number;
+}
+
 @ApiTags('导师端')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('mentor')
 export class MentorController {
   constructor(private readonly mentor: MentorService) {}
+
+  @Get('options')
+  @Roles(UserRole.STUDENT)
+  @ApiOperation({ summary: '可选导师列表(学生端选择教师)' })
+  mentorOptions() {
+    return this.mentor.listSelectableMentors();
+  }
+
+  @Get('my-mentor')
+  @Roles(UserRole.STUDENT)
+  @ApiOperation({ summary: '查看我已选择的导师' })
+  myMentor(@CurrentUser() user: AuthUser) {
+    return this.mentor.getMyMentor(user.id);
+  }
+
+  @Post('select')
+  @Roles(UserRole.STUDENT)
+  @ApiOperation({ summary: '选择/更换导师' })
+  selectMentor(@CurrentUser() user: AuthUser, @Body() dto: SelectMentorDto) {
+    return this.mentor.selectMentor(user.id, dto.mentorId);
+  }
 
   @Get('dashboard')
   @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN, UserRole.SYS_ADMIN)
