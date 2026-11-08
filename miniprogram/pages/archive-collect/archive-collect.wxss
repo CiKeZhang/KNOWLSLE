@@ -68,6 +68,39 @@
 .chapter.round-2 .chapter-name, .chapter.round-2 .chapter-round { color: #E6A23C; }
 .chapter.round-3 { border-color: #c2e7b0; background: #f0f9eb; }
 .chapter.round-3 .chapter-name, .chapter.round-3 .chapter-round { color: #67C23A; }
+.chapter-weak { border-color: #fbc4c4 !important; background: #fef0f0 !important; }
+.chapter-weak .chapter-name { color: #f56c6c !important; }
+
+/* 章节右侧细分 + 薄弱 */
+.chapter-right { display: flex; align-items: center; gap: 8rpx; flex-shrink: 0; margin-left: 8rpx; }
+.sub-stage-tag {
+  width: 44rpx; height: 44rpx; border-radius: 50%;
+  background: #f4f4f5; border: 2rpx solid #e9e9eb;
+  font-size: 22rpx; color: #909399;
+  display: flex; align-items: center; justify-content: center;
+}
+.sub-stage-tag.active { background: #409EFF; border-color: #409EFF; color: #fff; }
+.weak-mark { font-size: 28rpx; color: #c0c4cc; }
+.chapter-weak .weak-mark { color: #f56c6c; }
+
+/* 轮次分布 */
+.round-dist { display: flex; gap: 12rpx; margin-bottom: 12rpx; flex-wrap: wrap; }
+.round-chip {
+  font-size: 22rpx; padding: 4rpx 14rpx; border-radius: 16rpx;
+  background: #f4f4f5; color: #909399; border: 1rpx solid transparent;
+}
+.round-chip.round-1.filled { color: #409EFF; background: #ecf5ff; border-color: #b3d8ff; }
+.round-chip.round-2.filled { color: #E6A23C; background: #fdf6ec; border-color: #f5dab1; }
+.round-chip.round-3.filled { color: #67C23A; background: #f0f9eb; border-color: #c2e7b0; }
+
+/* 进度条分科目颜色 */
+.bar-inner.bar-politics { background: linear-gradient(90deg, #f56c6c, #f78989); }
+.bar-inner.bar-english { background: linear-gradient(90deg, #409EFF, #66b1ff); }
+.bar-inner.bar-math { background: linear-gradient(90deg, #E6A23C, #f0b552); }
+.bar-inner.bar-major { background: linear-gradient(90deg, #67C23A, #85ce61); }
+
+.subject-meta { display: flex; align-items: center; gap: 8rpx; }
+.subject-weak { font-size: 22rpx; color: #f56c6c; background: #fef0f0; padding: 2rpx 10rpx; border-radius: 10rpx; }
 
 .btn-submit {
   width: 100%;

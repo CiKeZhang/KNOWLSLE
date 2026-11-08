@@ -39,7 +39,7 @@ export class OperationLogService {
   }) {
     const page = params.page ?? 1;
     const pageSize = Math.min(params.pageSize ?? 20, 100);
-    const where: Record<string, unknown> = {};
+    const where: any = {};
     if (params.userId) where.userId = params.userId;
     if (params.action) where.action = { contains: params.action };
     if (params.startTime || params.endTime) {

@@ -102,7 +102,6 @@ export class NotificationsService {
         type: AlertType.CHECKIN_MISSING,
         description: `${WeekUtil.weekKey()} 当周逾期未打卡`,
       })),
-      skipDuplicates: false,
     }).catch(() => undefined);
     // 2) 站内信
     await this.batchCreate(overdueIds, {
@@ -315,7 +314,7 @@ export class NotificationsService {
     const c = await this.prisma.systemConfig.findUnique({
       where: { key: 'notify_channels' },
     });
-    return (c?.value as NotifyChannelConfig) ?? {
+    return (c?.value as unknown as NotifyChannelConfig) ?? {
       in_app: { enabled: true },
       wecom: { enabled: false, corp_id: '', agent_id: '', secret: '' },
       sms: { enabled: false, provider: 'aliyun', access_key_id: '', access_key_secret: '', sign_name: '' },

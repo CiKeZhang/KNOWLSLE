@@ -111,7 +111,12 @@ export class AdminService {
     examSubjects?: string[];
     isCollegeAligned?: boolean;
   }, operatorId: number) {
-    const p = await this.prisma.majorProgram.create({ data });
+    const p = await this.prisma.majorProgram.create({
+      data: {
+        ...data,
+        examSubjects: data.examSubjects ? JSON.stringify(data.examSubjects) : undefined,
+      } as any,
+    });
     await this.opLog.record(operatorId, 'create_program', `program:${p.id}`, data);
     return p;
   }

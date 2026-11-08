@@ -83,7 +83,7 @@ export class AiService {
         difficulty,
         reasons,
         risks,
-        examSubjects: (p.examSubjects as string[]) ?? undefined,
+        examSubjects: (p.examSubjects as unknown as string[]) ?? undefined,
         enrollCount: p.enrollCount2025 ?? p.enrollCount2024,
         reexamLine: p.reexamLine2025 ?? p.reexamLine2024,
       };
@@ -192,7 +192,7 @@ export class AiService {
    * - 学生自身条件 30%(绩点、专业排名、院校层次偏好匹配、剩余时长充裕度)
    */
   private scoreProgram(
-    p: { majorName: string; enrollCount2025?: number | null; enrollCount2024?: number | null; reexamLine2025?: number | null; reexamLine2024?: number | null; reportRatio2025?: any; examSubjects?: any; school: { name: string; tier: SchoolTier; region?: string | null } },
+    p: any,
     input: AiRecommendInputDto,
   ): {
     matchScore: number;
@@ -255,7 +255,7 @@ export class AiService {
       if (p.school.tier === input.schoolTierPref) {
         stuScore += 8;
         reasons.push(`院校层次(${this.tierLabel(p.school.tier)})符合偏好`);
-      } else if (this.tierRank(p.school.tier) <= this.tierRank(input.schoolTierPref)) {
+      } else if (this.tierRank(p.school.tier) <= this.tierRank(input.schoolTierPref as unknown as SchoolTier)) {
         stuScore += 4;
         reasons.push(`院校层次优于偏好,可作冲刺选项`);
       } else {
@@ -903,6 +903,7 @@ ${items.slice(0, 6).map((i) => `- ${i.tier} | ${i.schoolName} ${i.majorName} | �
     const school = await this.prisma.school.findUnique({
       where: { id: args.schoolId },
       include: {
+        _count: { select: { programs: true } },
         programs: {
           take: 10,
           orderBy: { enrollCount2025: 'desc' },

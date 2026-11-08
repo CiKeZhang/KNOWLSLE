@@ -29,9 +29,9 @@ export class HelpController {
   apply(@CurrentUser() user: AuthUser, @Body() dto: ApplyHelpDto) {
     return this.help.apply(
       user.id,
-      dto.type as HelpType,
+      dto.type as unknown as HelpType,
       dto.content,
-      dto.preferredRole as UserRole | undefined,
+      dto.preferredRole as unknown as UserRole | undefined,
     );
   }
 
@@ -42,7 +42,7 @@ export class HelpController {
     return this.help.applyFromCheckIn(
       user.id,
       dto.checkInId,
-      (dto.type as HelpType) ?? HelpType.OTHER,
+      (dto.type as unknown as HelpType) ?? HelpType.OTHER,
       dto.extraContent,
     );
   }

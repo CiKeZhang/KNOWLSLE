@@ -1,4 +1,5 @@
-import { PrismaClient, UserRole, UserStatus, StudyStage } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { UserRole, UserStatus, StudyStage } from '../src/common/enums';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -140,8 +141,8 @@ async function main() {
       majorRank: '8/45',
       region: '北京',
       schoolTierPref: 'TWO_ONE_ONE',
-      strongSubjects: ['政治', '英语'],
-      weakSubjects: ['数学三'],
+      strongSubjects: JSON.stringify(['政治', '英语']),
+      weakSubjects: JSON.stringify(['数学三']),
       careerIntention: '金融行业从业',
       enterYear: 2021,
       currentStage: StudyStage.BASIC,
@@ -219,7 +220,7 @@ async function main() {
         majorName: p.majorName,
         enrollCount2025: p.enrollCount2025,
         reexamLine2025: p.reexamLine2025,
-        examSubjects: p.examSubjects,
+        examSubjects: JSON.stringify(p.examSubjects),
       },
     }).catch(() => undefined);
   }
@@ -230,12 +231,12 @@ async function main() {
     update: {},
     create: {
       key: 'alert_rules',
-      value: {
+      value: JSON.stringify({
         checkinMissingWeeks: 2,
         progressStaleWeeks: 3,
         loginInactiveDays: 15,
         scoreBelowNationalLine: true,
-      },
+      }),
       description: '预警规则配置',
     },
   });

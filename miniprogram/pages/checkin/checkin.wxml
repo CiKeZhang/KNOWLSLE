@@ -65,7 +65,7 @@
       ></textarea>
     </view>
 
-    <!-- 选填项:学习时长 + 分科进度(从档案同步) -->
+    <!-- 选填项:学习时长 + 分科进度(可内联编辑) + 趋势 -->
     <view class="card">
       <view class="card-title">4. 补充信息(选填)</view>
       <view class="form-row">
@@ -73,24 +73,69 @@
         <input class="row-input" type="digit" placeholder="小时" value="{{form.studyHours}}" bindinput="onHoursInput" />
       </view>
 
-      <!-- 分科细化进度展示(从考研档案同步) -->
+      <!-- 分科细化进度 -->
       <view class="progress-section" wx:if="{{hasSubjectProgress || subjectView.length > 0}}">
         <view class="progress-head">
           <text class="progress-title">分科复习进度</text>
-          <text class="progress-update" bindtap="goUpdateProgress">更新 ›</text>
+          <view class="progress-actions">
+            <text class="progress-edit {{editMode ? 'on' : ''}}" bindtap="toggleEditMode">{{editMode ? '完成' : '编辑'}}</text>
+            <text class="progress-update" bindtap="goUpdateProgress">档案 ›</text>
+          </view>
         </view>
+        <view class="progress-tip" wx:if="{{editMode}}">💡 点击章节调整轮次,短标调整细分阶段,⭐标记薄弱</view>
 
         <block wx:if="{{hasSubjectProgress}}">
-          <view class="subject" wx:for="{{subjectView}}" wx:for-item="subj" wx:key="key">
+          <view class="subject" wx:for="{{subjectView}}" wx:for-item="subj" wx:for-index="si" wx:key="key">
             <view class="subject-head">
               <text class="subject-name">{{subj.name}}</text>
-              <text class="subject-percent">{{subj.percent}}%</text>
+              <view class="subject-meta">
+                <text class="subject-percent">{{subj.percent}}%</text>
+                <text class="subject-weak" wx:if="{{subj.weakCount > 0}}">⭐{{subj.weakCount}}</text>
+              </view>
             </view>
-            <view class="bar"><view class="bar-inner" style="width:{{subj.percent}}%;"></view></view>
+            <view class="bar"><view class="bar-inner bar-{{subj.key}}" style="width:{{subj.percent}}%;"></view></view>
+            <view class="round-dist">
+              <text class="round-chip round-{{rounds[i].v}} {{subj.counts[rounds[i].v] > 0 ? 'filled' : ''}}" wx:for="{{rounds}}" wx:for-index="i" wx:key="v">
+                {{rounds[i].label}} {{subj.counts[rounds[i].v]}}
+              </text>
+            </view>
             <view class="chapter-list">
-              <view class="chapter round-{{ch.round}}" wx:for="{{subj.chapters}}" wx:for-item="ch" wx:key="name">
+              <view class="chapter chapter-{{ch.round}} {{ch.weak ? 'chapter-weak' : ''}} {{editMode ? 'editable' : ''}}"
+                    wx:for="{{subj.chapters}}" wx:for-item="ch" wx:key="name"
+                    bindtap="onChapterRoundTap" data-key="{{subj.key}}" data-idx="{{index}}">
                 <text class="chapter-name">{{ch.name}}</text>
-                <text class="chapter-round">{{ch.roundLabel}}</text>
+                <view class="chapter-right">
+                  <view class="sub-stage-tag" catchtap="onChapterSubStageTap" data-key="{{subj.key}}" data-idx="{{index}}"
+                        class="{{ch.subStage > 0 ? 'active' : ''}}">
+                    {{ch.subStageShort}}
+                  </view>
+                  <text class="weak-mark" catchtap="onChapterWeakTap" data-key="{{subj.key}}" data-idx="{{index}}">
+                    {{ch.weak ? '⭐' : '☆'}}
+                  </text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 进度趋势 -->
+          <view class="trend-section" wx:if="{{trend && (trend.public.length > 1 || trend.major.length > 1)}}">
+            <view class="trend-title">📈 近几周进度趋势</view>
+            <view class="trend-row" wx:if="{{trend.public.length > 1}}">
+              <text class="trend-label">公共课</text>
+              <view class="trend-bars">
+                <view class="trend-bar-wrap" wx:for="{{trend.public}}" wx:for-item="pt" wx:key="week">
+                  <view class="trend-bar" style="height:{{pt.value}}%;"></view>
+                  <text class="trend-val">{{pt.value}}</text>
+                </view>
+              </view>
+            </view>
+            <view class="trend-row" wx:if="{{trend.major.length > 1}}">
+              <text class="trend-label">专业课</text>
+              <view class="trend-bars">
+                <view class="trend-bar-wrap" wx:for="{{trend.major}}" wx:for-item="pt" wx:key="week">
+                  <view class="trend-bar trend-bar-major" style="height:{{pt.value}}%;"></view>
+                  <text class="trend-val">{{pt.value}}</text>
+                </view>
               </view>
             </view>
           </view>
@@ -106,7 +151,7 @@
             <text class="row-label">专业课进度</text>
             <text class="progress-value">{{archiveMajor}}%</text>
           </view>
-          <view class="muted">还没维护分科进度? 点右上角「更新」快速设置</view>
+          <view class="muted">还没维护分科进度? 点右上角「档案 ›」快速设置</view>
         </block>
       </view>
     </view>
@@ -143,7 +188,7 @@
         <text class="detail-value success">✅ 已完成</text>
       </view>
 
-      <!-- 分科进度(从考研档案同步) -->
+      <!-- 分科进度(只读展示) -->
       <view class="progress-section" wx:if="{{hasSubjectProgress}}">
         <view class="progress-head">
           <text class="progress-title">分科复习进度</text>
@@ -152,13 +197,24 @@
         <view class="subject" wx:for="{{subjectView}}" wx:for-item="subj" wx:key="key">
           <view class="subject-head">
             <text class="subject-name">{{subj.name}}</text>
-            <text class="subject-percent">{{subj.percent}}%</text>
+            <view class="subject-meta">
+              <text class="subject-percent">{{subj.percent}}%</text>
+              <text class="subject-weak" wx:if="{{subj.weakCount > 0}}">⭐{{subj.weakCount}}</text>
+            </view>
           </view>
-          <view class="bar"><view class="bar-inner" style="width:{{subj.percent}}%;"></view></view>
+          <view class="bar"><view class="bar-inner bar-{{subj.key}}" style="width:{{subj.percent}}%;"></view></view>
+          <view class="round-dist">
+            <text class="round-chip round-{{rounds[i].v}} {{subj.counts[rounds[i].v] > 0 ? 'filled' : ''}}" wx:for="{{rounds}}" wx:for-index="i" wx:key="v">
+              {{rounds[i].label}} {{subj.counts[rounds[i].v]}}
+            </text>
+          </view>
           <view class="chapter-list">
-            <view class="chapter round-{{ch.round}}" wx:for="{{subj.chapters}}" wx:for-item="ch" wx:key="name">
+            <view class="chapter chapter-{{ch.round}} {{ch.weak ? 'chapter-weak' : ''}}" wx:for="{{subj.chapters}}" wx:for-item="ch" wx:key="name">
               <text class="chapter-name">{{ch.name}}</text>
-              <text class="chapter-round">{{ch.roundLabel}}</text>
+              <view class="chapter-right">
+                <view class="sub-stage-tag {{ch.subStage > 0 ? 'active' : ''}}">{{ch.subStageShort}}</view>
+                <text class="weak-mark">{{ch.weak ? '⭐' : '☆'}}</text>
+              </view>
             </view>
           </view>
         </view>

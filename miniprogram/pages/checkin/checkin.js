@@ -33,7 +33,8 @@ Page({
     checkin: { status: 'NOT_SUBMITTED' },
     stages: STAGES,
     stageLabelMap: STAGE_LABEL_MAP,
-    // 每项带 checked 字段,避免在 WXML 里调用 indexOf(真机兼容性差)
+    rounds: subjectsUtil.ROUNDS,
+    subStages: subjectsUtil.SUB_STAGES,
     checkItems: CHECK_ITEMS.map((it) => ({ id: it.id, text: it.text, checked: false })),
     form: {
       stage: '',
@@ -44,12 +45,17 @@ Page({
     },
     submitting: false,
     history: [],
-    // 分科进度(从考研档案同步)
+    // 分科进度(可内联编辑)
+    subjectProgress: {},
     subjectView: [],
     hasSubjectProgress: false,
     archivePublic: 0,
     archiveMajor: 0,
     targetSchool: '',
+    // 进度趋势
+    trend: null,
+    // 编辑模式: false=只读展示, true=可点击编辑
+    editMode: false,
   },
 
   onShow() {
@@ -76,7 +82,9 @@ Page({
   async loadHistory() {
     try {
       const data = await getApp().request({ url: '/checkin/me/history?limit=8' });
-      this.setData({ history: data.items || data || [] });
+      const history = data.items || data || [];
+      this.setData({ history });
+      // 有了档案数据后会在 loadProgressArchive 里一起算 trend
     } catch (e) {
       // 静默
     }
@@ -88,19 +96,30 @@ Page({
       const data = await getApp().request({ url: '/progress/me' });
       const arc = data && data.archive ? data.archive : null;
       if (!arc) {
-        this.setData({ subjectView: [], hasSubjectProgress: false, archivePublic: 0, archiveMajor: 0, targetSchool: '' });
+        this.setData({
+          subjectProgress: {},
+          subjectView: [],
+          hasSubjectProgress: false,
+          archivePublic: 0,
+          archiveMajor: 0,
+          targetSchool: '',
+          trend: null,
+        });
         return;
       }
-      const sp = arc.subjectProgress || null;
-      var view = subjectsUtil.buildView(sp);
-      var hasAny = sp && view.some(function (s) { return s.percent > 0; });
-      var overall = subjectsUtil.overall(sp);
+      const sp = subjectsUtil.normalize(arc.subjectProgress);
+      const view = subjectsUtil.buildView(sp);
+      const hasAny = sp && view.some(function (s) { return s.percent > 0; });
+      const overall = subjectsUtil.overall(sp);
+      const trend = subjectsUtil.buildTrend(this.data.history, sp);
       this.setData({
+        subjectProgress: sp,
         subjectView: view,
         hasSubjectProgress: !!hasAny,
         archivePublic: overall.public || arc.publicCourseProgress || 0,
         archiveMajor: overall.major || arc.majorCourseProgress || 0,
         targetSchool: arc.targetSchoolName ? (arc.targetSchoolName + (arc.targetMajor ? ' · ' + arc.targetMajor : '')) : '',
+        trend: trend,
       });
     } catch (e) {
       // 静默
@@ -132,7 +151,78 @@ Page({
     this.setData({ 'form.onlineConfirmationCompleted': !this.data.form.onlineConfirmationCompleted });
   },
 
-  // 跳到信息采集页更新分科进度
+  // 切换编辑模式
+  toggleEditMode() {
+    const next = !this.data.editMode;
+    this.setData({ editMode: next });
+    if (!next) {
+      // 退出编辑模式时,如果有修改,即时保存到后端
+      this.saveProgress();
+    }
+  },
+
+  // 内联编辑:点击章节轮次
+  onChapterRoundTap(e) {
+    if (!this.data.editMode) return;
+    const key = e.currentTarget.dataset.key;
+    const idx = Number(e.currentTarget.dataset.idx);
+    const next = subjectsUtil.cycleRound(this.data.subjectProgress, key, idx);
+    this.setData({
+      subjectProgress: next,
+      subjectView: subjectsUtil.buildView(next),
+    });
+  },
+
+  // 内联编辑:点击章节细分(subStage)
+  onChapterSubStageTap(e) {
+    if (!this.data.editMode) return;
+    const key = e.currentTarget.dataset.key;
+    const idx = Number(e.currentTarget.dataset.idx);
+    const next = subjectsUtil.cycleSubStage(this.data.subjectProgress, key, idx);
+    this.setData({
+      subjectProgress: next,
+      subjectView: subjectsUtil.buildView(next),
+    });
+  },
+
+  // 内联编辑:切换薄弱标记
+  onChapterWeakTap(e) {
+    if (!this.data.editMode) return;
+    const key = e.currentTarget.dataset.key;
+    const idx = Number(e.currentTarget.dataset.idx);
+    const next = subjectsUtil.toggleWeak(this.data.subjectProgress, key, idx);
+    this.setData({
+      subjectProgress: next,
+      subjectView: subjectsUtil.buildView(next),
+    });
+  },
+
+  // 保存分科进度到后端
+  async saveProgress() {
+    const sp = this.data.subjectProgress;
+    if (!sp || Object.keys(sp).length === 0) return;
+    try {
+      const overall = subjectsUtil.overall(sp);
+      await getApp().request({
+        url: '/progress/me/archive',
+        method: 'PATCH',
+        data: {
+          subjectProgress: sp,
+          publicCourseProgress: overall.public,
+          majorCourseProgress: overall.major,
+        },
+      });
+      // 更新本地显示
+      this.setData({
+        archivePublic: overall.public,
+        archiveMajor: overall.major,
+      });
+    } catch (e) {
+      // 保存失败不阻断,下次再试
+    }
+  },
+
+  // 跳到档案采集页
   goUpdateProgress() {
     wx.navigateTo({ url: '/pages/archive-collect/archive-collect?from=checkin' });
   },
@@ -153,24 +243,41 @@ Page({
     }
 
     this.setData({ submitting: true });
+
+    // 提交打卡前,先把当前分科进度保存到档案
+    const sp = this.data.subjectProgress;
+    const overall = subjectsUtil.overall(sp || {});
+
     const payload = {
       stage,
       completedItems,
       difficulties: difficulties.trim(),
       studyHours: this.data.form.studyHours ? Number(this.data.form.studyHours) : undefined,
-      // 从档案分科进度自动算出整体百分比,保持后端字段一致
-      progressPublic: this.data.archivePublic,
-      progressMajor: this.data.archiveMajor,
+      progressPublic: overall.public || this.data.archivePublic,
+      progressMajor: overall.major || this.data.archiveMajor,
       onlineConfirmationCompleted: this.data.form.onlineConfirmationCompleted,
     };
 
     try {
       await getApp().request({ url: '/checkin/me/submit', method: 'POST', data: payload });
+      // 同时保存分科进度到档案(如果有变化)
+      if (sp && Object.keys(sp).length > 0) {
+        try {
+          await getApp().request({
+            url: '/progress/me/archive',
+            method: 'PATCH',
+            data: {
+              subjectProgress: sp,
+              publicCourseProgress: overall.public,
+              majorCourseProgress: overall.major,
+            },
+          });
+        } catch (e) { /* 不阻断打卡 */ }
+      }
       wx.showToast({ title: '打卡成功', icon: 'success' });
       this.loadCheckin();
       this.gotoCollectIfNeeded();
     } catch (e) {
-      // 网络异常:本地缓存
       try {
         const pending = wx.getStorageSync('pending_checkin') || [];
         pending.push({ payload, cachedAt: Date.now() });
@@ -195,7 +302,7 @@ Page({
         }, 800);
       }
     } catch (e) {
-      // 静默,不阻断打卡流程
+      // 静默
     }
   },
 

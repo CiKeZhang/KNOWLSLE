@@ -62,13 +62,25 @@
       <view class="subject" wx:for="{{subjectView}}" wx:for-item="subj" wx:key="key">
         <view class="subject-head">
           <text class="subject-name">{{subj.name}}</text>
-          <text class="subject-percent">{{subj.percent}}%</text>
+          <view class="subject-meta">
+            <text class="subject-percent">{{subj.percent}}%</text>
+            <text class="subject-weak" wx:if="{{subj.weakCount > 0}}">⭐{{subj.weakCount}}</text>
+          </view>
         </view>
-        <view class="bar"><view class="bar-inner" style="width:{{subj.percent}}%;"></view></view>
+        <view class="bar"><view class="bar-inner bar-{{subj.key}}" style="width:{{subj.percent}}%;"></view></view>
+        <view class="round-dist">
+          <text class="round-chip round-{{rounds[i].v}} {{subj.counts[rounds[i].v] > 0 ? 'filled' : ''}}" wx:for="{{rounds}}" wx:for-index="i" wx:key="v">
+            {{rounds[i].label}} {{subj.counts[rounds[i].v]}}
+          </text>
+        </view>
         <view class="chapter-list">
-          <view class="chapter round-{{ch.round}}" wx:for="{{subj.chapters}}" wx:for-item="ch" wx:key="name">
+          <view class="chapter round-{{ch.round}} {{ch.weak ? 'chapter-weak' : ''}}" wx:for="{{subj.chapters}}" wx:for-item="ch" wx:key="name">
             <text class="chapter-name">{{ch.name}}</text>
-            <text class="chapter-round">{{ch.roundLabel}}</text>
+            <view class="chapter-right">
+              <text class="chapter-round">{{ch.roundLabel}}</text>
+              <view class="sub-stage-tag {{ch.subStage > 0 ? 'active' : ''}}">{{ch.subStageShort}}</view>
+              <text class="weak-mark">{{ch.weak ? '⭐' : '☆'}}</text>
+            </view>
           </view>
         </view>
       </view>

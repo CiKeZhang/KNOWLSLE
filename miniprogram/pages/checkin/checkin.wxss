@@ -240,3 +240,63 @@
 .chapter.round-2 .chapter-name, .chapter.round-2 .chapter-round { color: #E6A23C; }
 .chapter.round-3 { border-color: #c2e7b0; background: #f0f9eb; }
 .chapter.round-3 .chapter-name, .chapter.round-3 .chapter-round { color: #67C23A; }
+
+/* 章节右侧细分 + 薄弱 */
+.chapter-right { display: flex; align-items: center; gap: 8rpx; flex-shrink: 0; margin-left: 8rpx; }
+.sub-stage-tag {
+  width: 44rpx; height: 44rpx; border-radius: 50%;
+  background: #f4f4f5; border: 2rpx solid #e9e9eb;
+  font-size: 22rpx; color: #909399;
+  display: flex; align-items: center; justify-content: center;
+}
+.sub-stage-tag.active { background: #409EFF; border-color: #409EFF; color: #fff; }
+.weak-mark { font-size: 28rpx; color: #c0c4cc; }
+.chapter-weak { border-color: #fbc4c4 !important; background: #fef0f0 !important; }
+.chapter-weak .chapter-name { color: #f56c6c !important; }
+.chapter-weak .weak-mark { color: #f56c6c; }
+.chapter.editable { cursor: pointer; }
+
+/* 轮次分布条 */
+.round-dist { display: flex; gap: 12rpx; margin-bottom: 12rpx; flex-wrap: wrap; }
+.round-chip {
+  font-size: 22rpx; padding: 4rpx 14rpx; border-radius: 16rpx;
+  background: #f4f4f5; color: #909399; border: 1rpx solid transparent;
+}
+.round-chip.round-0.filled { color: #c0c4cc; }
+.round-chip.round-1.filled { color: #409EFF; background: #ecf5ff; border-color: #b3d8ff; }
+.round-chip.round-2.filled { color: #E6A23C; background: #fdf6ec; border-color: #f5dab1; }
+.round-chip.round-3.filled { color: #67C23A; background: #f0f9eb; border-color: #c2e7b0; }
+
+/* 编辑 & 趋势区域 */
+.progress-actions { display: flex; align-items: center; gap: 16rpx; }
+.progress-edit {
+  font-size: 26rpx; padding: 6rpx 20rpx; border-radius: 20rpx;
+  background: #f4f4f5; color: #606266;
+}
+.progress-edit.on { background: #409EFF; color: #fff; }
+.progress-tip { font-size: 24rpx; color: #E6A23C; background: #fdf6ec; padding: 12rpx 16rpx; border-radius: 8rpx; margin-bottom: 16rpx; }
+
+/* 进度趋势 */
+.trend-section { margin-top: 24rpx; padding-top: 20rpx; border-top: 1rpx solid #f0f2f5; }
+.trend-title { font-size: 26rpx; color: #606266; margin-bottom: 16rpx; }
+.trend-row { display: flex; align-items: flex-end; margin-bottom: 12rpx; }
+.trend-label { width: 100rpx; font-size: 24rpx; color: #909399; flex-shrink: 0; }
+.trend-bars { display: flex; align-items: flex-end; gap: 6rpx; height: 80rpx; flex: 1; }
+.trend-bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; }
+.trend-bar {
+  width: 100%; max-width: 32rpx; min-height: 4rpx;
+  background: linear-gradient(180deg, #409EFF, #66b1ff);
+  border-radius: 4rpx 4rpx 0 0; flex: 1;
+}
+.trend-bar-major { background: linear-gradient(180deg, #E6A23C, #f0b552); }
+.trend-val { font-size: 18rpx; color: #909399; margin-top: 4rpx; }
+
+/* 进度条分科目颜色 */
+.bar-inner.bar-politics { background: linear-gradient(90deg, #f56c6c, #f78989); }
+.bar-inner.bar-english { background: linear-gradient(90deg, #409EFF, #66b1ff); }
+.bar-inner.bar-math { background: linear-gradient(90deg, #E6A23C, #f0b552); }
+.bar-inner.bar-major { background: linear-gradient(90deg, #67C23A, #85ce61); }
+
+/* 科目 meta 区 */
+.subject-meta { display: flex; align-items: center; gap: 8rpx; }
+.subject-weak { font-size: 22rpx; color: #f56c6c; background: #fef0f0; padding: 2rpx 10rpx; border-radius: 10rpx; }

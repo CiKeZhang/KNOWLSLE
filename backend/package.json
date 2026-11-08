@@ -12,8 +12,10 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:dev": "prisma migrate dev --name init",
     "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed:mentors": "ts-node prisma/seed-mentors.ts",
     "prisma:studio": "prisma studio",
     "seed": "ts-node prisma/seed.ts",
+    "seed:mentors": "ts-node prisma/seed-mentors.ts",
     "test": "jest",
     "test:e2e": "jest --config test/jest-e2e.json",
     "lint": "eslint \"{src,prisma,test}/**/*.ts\" --fix"

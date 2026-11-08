@@ -58,7 +58,7 @@ export class CryptoUtil {
 
   /** 批量解密字段(用于查询结果脱敏后还原) */
   static decryptFields<T extends Record<string, any>>(obj: T, fields: string[]): T {
-    const result = { ...obj };
+    const result = { ...obj } as Record<string, any>;
     for (const f of fields) {
       if (result[f] && typeof result[f] === 'string') {
         try {
@@ -68,6 +68,6 @@ export class CryptoUtil {
         }
       }
     }
-    return result;
+    return result as T;
   }
 }

@@ -1,5 +1,4 @@
 // pages/archive-collect/archive-collect.js
-// 打卡后的信息采集:目标院校 / 目标专业 / 分科细化进度,写入考研档案
 
 var subjectsUtil = require('../../utils/subjects.js');
 
@@ -11,10 +10,10 @@ Page({
       region: '',
       remainingMonths: '',
     },
-    // 分科进度:subjectProgress 为提交结构,subjectView 为渲染结构
     subjectProgress: {},
     subjectView: [],
     rounds: subjectsUtil.ROUNDS,
+    subStages: subjectsUtil.SUB_STAGES,
     fromCheckin: false,
     submitting: false,
   },
@@ -42,7 +41,6 @@ Page({
         subjectView: subjectsUtil.buildView(sp),
       });
     }).catch(function () {
-      // 无档案时使用默认空进度
       var sp = subjectsUtil.normalize(null);
       that.setData({ subjectProgress: sp, subjectView: subjectsUtil.buildView(sp) });
     });
@@ -53,11 +51,27 @@ Page({
   onRegionInput: function (e) { this.setData({ 'form.region': e.detail.value }); },
   onMonthsInput: function (e) { this.setData({ 'form.remainingMonths': e.detail.value }); },
 
-  // 点击章节:未开始 -> 一轮 -> 强化 -> 冲刺 -> 未开始
-  onChapterTap: function (e) {
+  // 点击章节:轮次 0→1→2→3→0
+  onChapterRoundTap: function (e) {
     var key = e.currentTarget.dataset.key;
     var idx = Number(e.currentTarget.dataset.idx);
-    var next = subjectsUtil.cycle(this.data.subjectProgress, key, idx);
+    var next = subjectsUtil.cycleRound(this.data.subjectProgress, key, idx);
+    this.setData({ subjectProgress: next, subjectView: subjectsUtil.buildView(next) });
+  },
+
+  // 点击细分短标:subStage 0→1→2→3→4→0
+  onChapterSubStageTap: function (e) {
+    var key = e.currentTarget.dataset.key;
+    var idx = Number(e.currentTarget.dataset.idx);
+    var next = subjectsUtil.cycleSubStage(this.data.subjectProgress, key, idx);
+    this.setData({ subjectProgress: next, subjectView: subjectsUtil.buildView(next) });
+  },
+
+  // 点击薄弱标记
+  onChapterWeakTap: function (e) {
+    var key = e.currentTarget.dataset.key;
+    var idx = Number(e.currentTarget.dataset.idx);
+    var next = subjectsUtil.toggleWeak(this.data.subjectProgress, key, idx);
     this.setData({ subjectProgress: next, subjectView: subjectsUtil.buildView(next) });
   },
 
@@ -69,9 +83,12 @@ Page({
       return;
     }
 
+    var overall = subjectsUtil.overall(this.data.subjectProgress);
     var archiveData = {
       targetSchoolName: f.targetSchoolName.trim(),
       subjectProgress: this.data.subjectProgress,
+      publicCourseProgress: overall.public,
+      majorCourseProgress: overall.major,
     };
     if (f.targetMajor.trim()) archiveData.targetMajor = f.targetMajor.trim();
 
@@ -97,11 +114,7 @@ Page({
           }
         }, 800);
       })
-      .catch(function () {
-        // 错误提示由 request 统一处理
-      })
-      .then(function () {
-        that.setData({ submitting: false });
-      });
+      .catch(function () { /* 错误提示由 request 统一处理 */ })
+      .then(function () { that.setData({ submitting: false }); });
   },
 });

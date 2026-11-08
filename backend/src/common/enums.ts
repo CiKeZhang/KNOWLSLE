@@ -51,9 +51,11 @@ export enum HelpType {
   PSYCHOLOGICAL = 'PSYCHOLOGICAL',
   LIFE = 'LIFE',
   EMPLOYMENT = 'EMPLOYMENT',
+  OTHER = 'OTHER',
 }
 
 export enum HelpStatus {
+  OPEN = 'OPEN',
   PENDING = 'PENDING',
   IN_PROGRESS = 'IN_PROGRESS',
   RESOLVED = 'RESOLVED',
@@ -86,6 +88,9 @@ export enum ResourceType {
 
 export enum ResourceStatus {
   PUBLISHED = 'PUBLISHED',
+  PENDING_REVIEW = 'PENDING_REVIEW',
+  APPROVED = 'APPROVED',
+  OFFLINE = 'OFFLINE',
   DRAFT = 'DRAFT',
   ARCHIVED = 'ARCHIVED',
 }

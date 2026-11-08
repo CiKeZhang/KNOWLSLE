@@ -31,7 +31,7 @@ export class StudyPlanService {
   async getMyWeeklyPlan(studentId: number) {
     const weekKey = this.currentWeekKey();
     const profile = await this.prisma.studentProfile.findUnique({ where: { userId: studentId } });
-    const stage = profile?.currentStage ?? StudyStage.NOT_STARTED;
+    const stage = (profile?.currentStage ?? StudyStage.NOT_STARTED) as StudyStage;
     let plan = await this.prisma.studyPlan.findFirst({
       where: { studentId, weekKey },
     });
@@ -42,20 +42,20 @@ export class StudyPlanService {
         data: {
           studentId,
           weekKey,
-          tasks: tasks as any,
+          tasks: JSON.stringify(tasks),
           notes: this.stageNote(stage),
         },
       });
       await this.opLog.record(studentId, 'generate_plan', `plan:${plan.id}`, { weekKey, stage });
     }
-    return { ...plan, stage, weekKey };
+    return { ...plan, tasks: this.parseTasks(plan.tasks), stage, weekKey };
   }
 
   /** 学生:获取本月计划 */
   async getMyMonthlyPlan(studentId: number) {
     const monthKey = this.currentMonthKey();
     const profile = await this.prisma.studentProfile.findUnique({ where: { userId: studentId } });
-    const stage = profile?.currentStage ?? StudyStage.NOT_STARTED;
+    const stage = (profile?.currentStage ?? StudyStage.NOT_STARTED) as StudyStage;
     let plan = await this.prisma.studyPlan.findFirst({
       where: { studentId, monthKey },
     });
@@ -65,22 +65,22 @@ export class StudyPlanService {
         data: {
           studentId,
           monthKey,
-          tasks: tasks as any,
+          tasks: JSON.stringify(tasks),
           notes: this.stageNote(stage),
         },
       });
     }
-    return { ...plan, stage, monthKey };
+    return { ...plan, tasks: this.parseTasks(plan.tasks), stage, monthKey };
   }
 
   /** 学生:手动调整计划 */
   async updatePlan(studentId: number, planId: number, tasks: any[], notes?: string) {
     const updated = await this.prisma.studyPlan.update({
       where: { id: planId },
-      data: { tasks: tasks as any, notes: notes ?? undefined },
+      data: { tasks: JSON.stringify(tasks), notes: notes ?? undefined },
     });
     await this.opLog.record(studentId, 'update_plan', `plan:${planId}`, { taskCount: tasks.length });
-    return updated;
+    return { ...updated, tasks: this.parseTasks(updated.tasks) };
   }
 
   /** 学生:勾选任务完成状态 */
@@ -89,23 +89,23 @@ export class StudyPlanService {
     if (!plan || plan.studentId !== studentId) {
       throw new Error('计划不存在或无权操作');
     }
-    const tasks = plan.tasks as any[];
+    const tasks = this.parseTasks(plan.tasks);
     if (index < 0 || index >= tasks.length) {
       throw new Error('任务索引越界');
     }
     tasks[index].done = done;
     const updated = await this.prisma.studyPlan.update({
       where: { id: planId },
-      data: { tasks: tasks as any },
+      data: { tasks: JSON.stringify(tasks) },
     });
-    return updated;
+    return { ...updated, tasks: this.parseTasks(updated.tasks) };
   }
 
   /** 学生:重新生成本周计划(覆盖现有) */
   async regenerateWeeklyPlan(studentId: number) {
     const weekKey = this.currentWeekKey();
     const profile = await this.prisma.studentProfile.findUnique({ where: { userId: studentId } });
-    const stage = profile?.currentStage ?? StudyStage.NOT_STARTED;
+    const stage = (profile?.currentStage ?? StudyStage.NOT_STARTED) as StudyStage;
     const tasks = this.generateWeeklyTasks(stage, profile?.remainingMonths);
     const existing = await this.prisma.studyPlan.findFirst({
       where: { studentId, weekKey },
@@ -114,15 +114,26 @@ export class StudyPlanService {
     if (existing) {
       plan = await this.prisma.studyPlan.update({
         where: { id: existing.id },
-        data: { tasks: tasks as any, notes: this.stageNote(stage) },
+        data: { tasks: JSON.stringify(tasks), notes: this.stageNote(stage) },
       });
     } else {
       plan = await this.prisma.studyPlan.create({
-        data: { studentId, weekKey, tasks: tasks as any, notes: this.stageNote(stage) },
+        data: { studentId, weekKey, tasks: JSON.stringify(tasks), notes: this.stageNote(stage) },
       });
     }
     await this.opLog.record(studentId, 'regenerate_plan', `plan:${plan.id}`, { weekKey, stage });
-    return { ...plan, stage, weekKey };
+    return { ...plan, tasks: this.parseTasks(plan.tasks), stage, weekKey };
+  }
+
+  /** 解析数据库中以字符串存储的任务 JSON */
+  private parseTasks(raw: string | null): any[] {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
 
   // ============ 私有:任务模板生成 ============

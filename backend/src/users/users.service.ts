@@ -35,7 +35,7 @@ export class UsersService {
       data: {
         username: dto.username,
         name: dto.name,
-        role: dto.role as UserRole,
+        role: dto.role as unknown as UserRole,
         status: UserStatus.ACTIVE,
         studentNo: dto.studentNo,
         staffNo: dto.staffNo,
@@ -210,7 +210,7 @@ export class UsersService {
           data: {
             username: item.username,
             name: item.name,
-            role: item.role as UserRole,
+            role: item.role as unknown as UserRole,
             status: UserStatus.ACTIVE,
             studentNo: item.studentNo,
             staffNo: item.staffNo,
@@ -248,7 +248,7 @@ export class UsersService {
         totalCount: dto.items.length,
         successCount: success,
         failCount: fail,
-        detail: { results },
+        detail: JSON.stringify({ results }),
       },
     });
     await this.opLog.record(operatorId, 'batch_import_users', 'users', {

@@ -27,6 +27,8 @@ Page({
     timeline: [],
     subjectView: [],
     hasSubjectProgress: false,
+    rounds: subjectsUtil.ROUNDS,
+    subStages: subjectsUtil.SUB_STAGES,
   },
 
   onLoad(options) {

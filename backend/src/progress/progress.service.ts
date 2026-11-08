@@ -29,7 +29,11 @@ const ROUND_MAX = 3;
 // 公共课科目 key(其余视为专业课)
 const PUBLIC_SUBJECT_KEYS = ['politics', 'english', 'math'];
 
-/** 由分科章节进度聚合出每科百分比 + 公共课/专业课整体百分比 */
+/** 由分科章节进度聚合出每科百分比 + 公共课/专业课整体百分比
+ *  章节完成度(0-100): round*25 + subStage*5
+ *  - round 0→0%, 1→25%, 2→50%, 3→75%
+ *  - subStage 在每轮内再分 0-25% 区间,每档 5%
+ */
 function summarizeSubjectProgress(sp: Record<string, any> | null | undefined) {
   if (!sp || typeof sp !== 'object') return null;
   const subjects: Record<string, { name: string; percent: number; total: number; counts: number[] }> = {};
@@ -38,13 +42,14 @@ function summarizeSubjectProgress(sp: Record<string, any> | null | undefined) {
     const subj = sp[key];
     const chapters = (subj && Array.isArray(subj.chapters)) ? subj.chapters : [];
     const counts = [0, 0, 0, 0];
-    let weight = 0;
+    let totalPercent = 0;
     for (const ch of chapters) {
       const r = Math.max(0, Math.min(ROUND_MAX, Number(ch && ch.round) || 0));
+      const s = Math.max(0, Math.min(4, Number(ch && ch.subStage) || 0));
       counts[r] += 1;
-      weight += r;
+      totalPercent += Math.min(100, r * 25 + s * 5);
     }
-    const percent = chapters.length === 0 ? 0 : Math.round((weight / (ROUND_MAX * chapters.length)) * 100);
+    const percent = chapters.length === 0 ? 0 : Math.round(totalPercent / chapters.length);
     subjects[key] = { name: (subj && subj.name) || key, percent, total: chapters.length, counts };
   }
   const pctOf = (k: string) => (subjects[k] ? subjects[k].percent : null);
