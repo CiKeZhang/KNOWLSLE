@@ -53,4 +53,5 @@
       <button class="btn-confirm" bindtap="onComplete" loading="{{submitting}}">完成登录</button>
     </block>
   </view>
+  <view wx:if="{{showTestEntry}}" class="test-entry" bindtap="onTestLogin">切换账号(测试)</view>
 </view>

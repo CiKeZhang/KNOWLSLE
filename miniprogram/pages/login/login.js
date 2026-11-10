@@ -17,6 +17,7 @@ Page({
     },
     submitting: false,
     agreedPrivacy: false,
+    showTestEntry: false,
   },
 
   // 勾选隐私协议
@@ -40,6 +41,17 @@ Page({
   },
 
   onLoad() {
+    // 仅开发版/体验版显示「切换账号(测试)」入口,正式版隐藏
+    let showTest = false;
+    try {
+      const info = wx.getAccountInfoSync();
+      const ver = info && info.miniProgram ? info.miniProgram.envVersion : 'develop';
+      showTest = ver !== 'release';
+    } catch (e) {
+      showTest = true;
+    }
+    this.setData({ showTestEntry: showTest });
+
     // 如果已登录,按角色跳转首页
     if (getApp().globalData.token) {
       const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo') || {};
@@ -47,6 +59,41 @@ Page({
       const homeUrl = isMentor ? '/pages/mentor-dashboard/mentor-dashboard' : '/pages/index/index';
       wx.reLaunch({ url: homeUrl });
     }
+  },
+
+  // 测试登录:凭口令直接切换为任意学号/工号账号(不绑定微信)
+  onTestLogin() {
+    wx.showModal({
+      title: '切换账号(测试)',
+      editable: true,
+      placeholderText: '输入学号或工号',
+      success(res) {
+        if (!res.confirm) return;
+        const account = (res.content || '').trim();
+        if (!account) {
+          wx.showToast({ title: '请输入学号或工号', icon: 'none' });
+          return;
+        }
+        wx.showLoading({ title: '切换中...' });
+        getApp().request({
+          url: '/auth/test-login',
+          method: 'POST',
+          data: { account, secret: config.testSecret },
+        }).then((data) => {
+          wx.hideLoading();
+          wx.setStorageSync('token', data.accessToken);
+          wx.setStorageSync('userInfo', data.user);
+          getApp().globalData.token = data.accessToken;
+          getApp().globalData.userInfo = data.user;
+          wx.showToast({ title: '已切换为' + (data.user.name || account), icon: 'none' });
+          const isMentor = data.user.role && data.user.role !== 'STUDENT';
+          const homeUrl = isMentor ? '/pages/mentor-dashboard/mentor-dashboard' : '/pages/index/index';
+          setTimeout(() => wx.reLaunch({ url: homeUrl }), 600);
+        }).catch(() => {
+          wx.hideLoading();
+        });
+      },
+    });
   },
 
   // 第一步:微信登录(wx.login)

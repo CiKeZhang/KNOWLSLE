@@ -67,7 +67,11 @@ App({
       }, 1000);
       reject(res);
     } else {
-      wx.showToast({ title: `服务器错误 ${res.statusCode}`, icon: 'none' });
+      // 4xx 业务错误:优先展示后端返回的具体原因,避免只显示"服务器错误 400"
+      const body = res.data || {};
+      const msg = body.message || body.msg || `服务器错误 ${res.statusCode}`;
+      try { wx.hideLoading(); } catch (e) {}
+      wx.showToast({ title: msg, icon: 'none', duration: 3000 });
       reject(res);
     }
   },

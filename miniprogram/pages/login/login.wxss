@@ -201,3 +201,12 @@
 .picker-value.placeholder {
   color: #c0c4cc;
 }
+
+.test-entry {
+  margin-top: auto;
+  padding-top: 48rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #909399;
+  text-decoration: underline;
+}

@@ -41,3 +41,16 @@ export class BootstrapAdminDto {
   @IsString()
   name: string;
 }
+
+/** 测试登录:管理员用自己的微信登录后,直接切换到任意学生/导师账号查看(不绑定微信) */
+export class TestLoginDto {
+  @ApiProperty({ example: '251104050021', description: '学号 / 工号 / 用户名' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  account: string;
+
+  @ApiProperty({ description: '测试登录口令(服务端 TEST_LOGIN_SECRET)' })
+  @IsString()
+  secret: string;
+}

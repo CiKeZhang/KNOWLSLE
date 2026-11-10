@@ -70,6 +70,50 @@ export class AuthService {
     };
   }
 
+  /**
+   * 测试登录:凭测试口令直接切换为指定学生/导师账号
+   * 仅修改登录态,不写入 wechatOpenId,因此不会占用/绑定任何微信
+   */
+  async testLogin(account: string, secret: string) {
+    const expected = this.config.get<string>('TEST_LOGIN_SECRET') || 'kygl-test-2026';
+    if (!secret || secret !== expected) {
+      throw new UnauthorizedException('测试口令错误');
+    }
+    const acc = (account ?? '').trim();
+    if (!acc) throw new BadRequestException('请输入学号或工号');
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        status: UserStatus.ACTIVE,
+        OR: [{ staffNo: acc }, { studentNo: acc }, { username: acc }],
+      },
+    });
+    if (!user) throw new BadRequestException('账号不存在或已停用');
+
+    const token = await this.jwt.signAsync(
+      { sub: user.id, username: user.username, role: user.role },
+      {
+        secret: this.config.get<string>('JWT_SECRET', 'please_change_jwt_secret_in_production'),
+        expiresIn: this.config.get<string>('JWT_EXPIRES_IN', '12h'),
+      },
+    );
+
+    this.opLog.record(user.id, 'test_login', 'auth', { account: acc }).catch(() => undefined);
+
+    return {
+      accessToken: token,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        studentNo: user.studentNo,
+        staffNo: user.staffNo,
+        majorName: user.majorName,
+      },
+    };
+  }
+
   /** 修改密码 */
   async changePassword(userId: number, oldPwd: string, newPwd: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });

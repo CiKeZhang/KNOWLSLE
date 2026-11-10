@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { WechatAuthService } from './wechat-auth.service';
-import { LoginDto, ChangePasswordDto, BootstrapAdminDto } from './dto/auth.dto';
+import { LoginDto, ChangePasswordDto, BootstrapAdminDto, TestLoginDto } from './dto/auth.dto';
 import { WechatLoginDto, WechatPhoneDto, WechatCompleteDto } from './dto/wechat.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -48,6 +48,13 @@ export class AuthController {
   @ApiOperation({ summary: '微信小程序-第三步:补全姓名+学号,完成登录/注册' })
   wechatComplete(@Body() dto: WechatCompleteDto) {
     return this.wechat.completeLogin(dto);
+  }
+
+  @Public()
+  @Post('test-login')
+  @ApiOperation({ summary: '测试登录:凭口令切换为任意学号/工号账号(不绑定微信)' })
+  testLogin(@Body() dto: TestLoginDto) {
+    return this.auth.testLogin(dto.account, dto.secret);
   }
 
   @Public()
