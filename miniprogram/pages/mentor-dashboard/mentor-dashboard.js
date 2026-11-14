@@ -34,10 +34,11 @@ Page({
       // 阶段分布:对象 map → 数组
       const dist = data.stageDistribution || {};
       const total = data.total || 0;
+      // 与后端 StudyStage 枚举一致
       const stageMap = {
-        NOT_STARTED: '未开始', CHOOSING: '择校中', FOUNDATION: '基础阶段',
-        STRENGTHEN: '强化阶段', SPRINT: '冲刺阶段', EXAM: '初试',
-        ADJUSTMENT: '复试调剂', ADMITTED: '已上岸',
+        NOT_STARTED: '未开始', CHOOSING: '择校中', BASIC: '基础复习',
+        STRENGTHENING: '强化刷题', SPRINT: '冲刺', EXAM_DONE: '初试结束',
+        REEXAM_PREP: '备战复试', ADJUSTING: '调剂中', FINISHED: '考研结束',
       };
       const stageDistribution = Object.keys(dist).map((key) => ({
         stage: stageMap[key] || key,

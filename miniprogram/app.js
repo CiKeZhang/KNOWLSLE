@@ -1,6 +1,16 @@
 // app.js - 考研进度管理小程序全局逻辑
 const config = require('./config.js');
 
+// 并发请求同时收到 401 时只跳转一次登录页,避免连续 reLaunch
+let redirecting = false;
+
+// 后端参数校验失败的 message 是字符串数组,showToast 只接受字符串
+function fmtMsg(msg, fallback) {
+  if (Array.isArray(msg)) return msg.join('；').slice(0, 60);
+  if (typeof msg === 'string' && msg.trim()) return msg.slice(0, 60);
+  return fallback;
+}
+
 // 解析请求通道:开发版直连后端,体验版/正式版走云托管(免域名白名单)
 function resolveCloudMode() {
   if (config.mode === 'cloud') return true;
@@ -51,25 +61,29 @@ App({
       if (body.success !== false) {
         resolve(body.data !== undefined ? body.data : body);
       } else {
-        wx.showToast({ title: body.message || '请求失败', icon: 'none' });
+        wx.showToast({ title: fmtMsg(body.message, '请求失败'), icon: 'none' });
         reject(body);
       }
     } else if (res.statusCode === 401) {
-      // token 过期,清除并跳转登录
+      // token 过期,清除并跳转登录(并发 401 只处理一次)
       try { wx.hideLoading(); } catch (e) {}
-      wx.removeStorageSync('token');
-      wx.removeStorageSync('userInfo');
-      this.globalData.token = '';
-      this.globalData.userInfo = null;
-      wx.showToast({ title: '登录已过期,请重新登录', icon: 'none' });
-      setTimeout(() => {
-        wx.reLaunch({ url: '/pages/login/login' });
-      }, 1000);
+      if (!redirecting) {
+        redirecting = true;
+        wx.removeStorageSync('token');
+        wx.removeStorageSync('userInfo');
+        this.globalData.token = '';
+        this.globalData.userInfo = null;
+        wx.showToast({ title: '登录已过期,请重新登录', icon: 'none' });
+        setTimeout(() => {
+          wx.reLaunch({ url: '/pages/login/login' });
+          redirecting = false;
+        }, 1000);
+      }
       reject(res);
     } else {
       // 4xx 业务错误:优先展示后端返回的具体原因,避免只显示"服务器错误 400"
       const body = res.data || {};
-      const msg = body.message || body.msg || `服务器错误 ${res.statusCode}`;
+      const msg = fmtMsg(body.message || body.msg, `服务器错误 ${res.statusCode}`);
       try { wx.hideLoading(); } catch (e) {}
       wx.showToast({ title: msg, icon: 'none', duration: 3000 });
       reject(res);

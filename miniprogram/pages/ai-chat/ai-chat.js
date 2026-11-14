@@ -180,7 +180,7 @@ Page({
 
   async deleteSession(e) {
     const id = e.currentTarget.dataset.id;
-    e.stopPropagation();
+    // 小程序事件对象没有 stopPropagation();wxml 已用 catchtap 阻断冒泡,无需调用
     wx.showModal({
       title: '确认删除',
       content: '确定要删除这个会话吗？',

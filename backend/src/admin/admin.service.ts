@@ -139,10 +139,12 @@ export class AdminService {
   }
 
   async updateConfig(key: string, value: unknown, description: string, operatorId: number) {
+    // SystemConfig.value 是 String;对象统一序列化为 JSON 文本,与读取侧 JSON.parse 对齐
+    const text = typeof value === 'string' ? value : JSON.stringify(value ?? null);
     const c = await this.prisma.systemConfig.upsert({
       where: { key },
-      update: { value: value as any, description: description ?? undefined },
-      create: { key, value: value as any, description },
+      update: { value: text, description: description ?? undefined },
+      create: { key, value: text, description },
     });
     await this.opLog.record(operatorId, 'update_config', `config:${key}`, { value });
     return c;

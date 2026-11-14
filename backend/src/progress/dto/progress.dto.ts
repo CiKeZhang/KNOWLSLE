@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsObject, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsObject, IsEnum, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -133,10 +133,14 @@ export class UpdateProfileDto {
 
   @ApiProperty({ required: false, type: [String] })
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   strongSubjects?: string[];
 
   @ApiProperty({ required: false, type: [String] })
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   weakSubjects?: string[];
 
   @ApiProperty({ required: false })

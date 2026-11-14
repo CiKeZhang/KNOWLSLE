@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsArray, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsBoolean, IsInt, Min, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class TaskItemDto {
@@ -24,6 +25,10 @@ export class TaskItemDto {
 export class UpdatePlanDto {
   @ApiProperty({ type: [TaskItemDto], description: '任务清单(支持手动调整)' })
   @IsArray()
+  // 全局 ValidationPipe 开了 whitelist;没有 ValidateNested/Type 时,
+  // 嵌套任务对象的字段会被全部剥掉,保存后变成 [[],[]]
+  @ValidateNested({ each: true })
+  @Type(() => TaskItemDto)
   tasks: TaskItemDto[];
 
   @ApiProperty({ required: false, description: '备注' })
@@ -34,6 +39,9 @@ export class UpdatePlanDto {
 
 export class ToggleTaskDto {
   @ApiProperty({ description: '任务索引' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
   index: number;
 
   @ApiProperty({ description: '是否完成' })

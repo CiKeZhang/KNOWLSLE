@@ -21,7 +21,10 @@ export class ResourcesService {
   }) {
     const page = params.page ?? 1;
     const pageSize = Math.min(params.pageSize ?? 20, 100);
-    const where: Record<string, unknown> = { status: ResourceStatus.APPROVED };
+    // 线上既有资源状态是 PUBLISHED,审核通过也可能写成 APPROVED;两者都应可见
+    const where: Record<string, unknown> = {
+      status: { in: [ResourceStatus.PUBLISHED, ResourceStatus.APPROVED] },
+    };
     if (params.type) where.type = params.type;
     if (params.stage) where.stage = params.stage;
     if (params.majorName) where.majorName = { contains: params.majorName };
@@ -87,13 +90,20 @@ export class ResourcesService {
     return updated;
   }
 
-  /** 浏览资源(自增计数) */
+  /** 浏览资源(仅已发布资源可见,自增计数) */
   async view(id: number) {
+    // 与 list 保持同一可见性口径,避免绕过审核直接按 id 读取未审核/已下架资源
+    const visible = await this.prisma.resource.findFirst({
+      where: { id, status: { in: [ResourceStatus.PUBLISHED, ResourceStatus.APPROVED] } },
+    });
+    if (!visible) {
+      throw new NotFoundException('资源不存在或尚未发布');
+    }
     await this.prisma.resource.update({
       where: { id },
       data: { viewCount: { increment: 1 } },
     });
-    return this.prisma.resource.findUnique({ where: { id } });
+    return { ...visible, viewCount: (visible.viewCount ?? 0) + 1 };
   }
 
   /** 后台:待审核资源列表 */

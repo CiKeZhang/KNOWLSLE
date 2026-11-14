@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OperationLogService } from '../common/services/operation-log.service';
 import { StudyStage } from '../common/enums';
@@ -75,6 +75,11 @@ export class StudyPlanService {
 
   /** 学生:手动调整计划 */
   async updatePlan(studentId: number, planId: number, tasks: any[], notes?: string) {
+    // 必须校验归属:planId 是自增整数,不校验时任意学生可覆盖他人整份计划
+    const plan = await this.prisma.studyPlan.findFirst({ where: { id: planId, studentId } });
+    if (!plan) {
+      throw new ForbiddenException('计划不存在或无权操作');
+    }
     const updated = await this.prisma.studyPlan.update({
       where: { id: planId },
       data: { tasks: JSON.stringify(tasks), notes: notes ?? undefined },
@@ -87,11 +92,11 @@ export class StudyPlanService {
   async toggleTask(studentId: number, planId: number, index: number, done: boolean) {
     const plan = await this.prisma.studyPlan.findUnique({ where: { id: planId } });
     if (!plan || plan.studentId !== studentId) {
-      throw new Error('计划不存在或无权操作');
+      throw new ForbiddenException('计划不存在或无权操作');
     }
     const tasks = this.parseTasks(plan.tasks);
     if (index < 0 || index >= tasks.length) {
-      throw new Error('任务索引越界');
+      throw new BadRequestException('任务索引越界');
     }
     tasks[index].done = done;
     const updated = await this.prisma.studyPlan.update({

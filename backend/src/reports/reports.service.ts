@@ -65,21 +65,24 @@ export class ReportsService {
       }
     }
 
-    // 打卡统计:本月或学期
+    // 打卡统计:本月或学期。必须同时给出上界,否则会把后续月份/学期的数据算进本期
     let since: Date | undefined;
+    let until: Date | undefined;
     if (params.month) {
       since = dayjs(`${params.month}-01`).startOf('month').toDate();
+      until = dayjs(since).add(1, 'month').toDate();
     } else if (params.semester) {
-      // YYYY-S1:9月 1 日开始;S2:3月 1 日开始
+      // YYYY-S1:9月 1 日开始(至次年 3月 1 日);S2:3月 1 日开始(至 9月 1 日)
       const m = /(\d{4})-S([12])/.exec(params.semester);
       if (m) {
         const year = parseInt(m[1], 10);
         const sem = m[2];
         since = new Date(year, sem === '1' ? 8 : 2, 1);
+        until = sem === '1' ? new Date(year + 1, 2, 1) : new Date(year, 8, 1);
       }
     }
     const checkinWhere: Record<string, unknown> = {};
-    if (since) checkinWhere.weekStart = { gte: since };
+    if (since) checkinWhere.weekStart = until ? { gte: since, lt: until } : { gte: since };
     const checkinRecords = await this.prisma.checkInRecord.findMany({
       where: checkinWhere,
       select: { studentId: true, status: true },

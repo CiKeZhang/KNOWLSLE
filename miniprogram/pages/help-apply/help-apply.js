@@ -3,8 +3,8 @@
 const TYPES = [
   { value: 'SCHOOL_CHOICE', label: '择校困惑' },
   { value: 'SUBJECT_BOTTLENECK', label: '单科瓶颈' },
-  { value: 'MENTAL', label: '心态问题' },
-  { value: 'REEXAM', label: '复试指导' },
+  { value: 'MENTAL_STATE', label: '心态问题' },
+  { value: 'REEXAM_GUIDE', label: '复试指导' },
   { value: 'OTHER', label: '其他' },
 ];
 

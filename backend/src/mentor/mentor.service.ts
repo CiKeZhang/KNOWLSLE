@@ -178,7 +178,11 @@ export class MentorService {
     const page = params.page ?? 1;
     const pageSize = Math.min(params.pageSize ?? 20, 100);
     const studentWhere = await this.buildStudentScope(params);
-    if (params.filterMentorId) studentWhere.mentorId = params.filterMentorId;
+    // buildStudentScope 对部分可见的 MAJOR_MENTOR 会写入 mentorId=actor.id。
+    // 此时不能让请求参数覆盖掉范围条件,否则可列出其他导师名下学生。
+    if (params.filterMentorId && !('mentorId' in studentWhere)) {
+      studentWhere.mentorId = params.filterMentorId;
+    }
     if (params.classId) studentWhere.classId = params.classId;
     if (params.majorId) studentWhere.majorId = params.majorId;
     if (params.stage) {

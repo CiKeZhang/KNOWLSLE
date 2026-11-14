@@ -60,7 +60,9 @@ export class DbTransferGuard extends AuthGuard('jwt') {
     if (err || !user) {
       throw err || new UnauthorizedException('需要有效的系统管理员令牌或运维口令');
     }
-    if (user.role !== UserRole.SYS_ADMIN) {
+    // 线上实际存在的最高管理员角色是 ACADEMIC_ADMIN(库中没有 SYS_ADMIN 用户),
+    // 只认 SYS_ADMIN 会让管理员 JWT 通道完全不可用
+    if (user.role !== UserRole.SYS_ADMIN && user.role !== UserRole.ACADEMIC_ADMIN) {
       throw new ForbiddenException('仅系统管理员可执行数据库传输');
     }
     return user;

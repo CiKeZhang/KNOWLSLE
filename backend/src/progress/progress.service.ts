@@ -229,8 +229,10 @@ export class ProgressService {
     if (dto.majorRank !== undefined) data.majorRank = dto.majorRank;
     if (dto.region !== undefined) data.region = dto.region;
     if (dto.schoolTierPref !== undefined) data.schoolTierPref = dto.schoolTierPref;
-    if (dto.strongSubjects !== undefined) data.strongSubjects = dto.strongSubjects;
-    if (dto.weakSubjects !== undefined) data.weakSubjects = dto.weakSubjects;
+    // schema 中 strongSubjects / weakSubjects 是 String(存放 JSON 数组文本),
+    // 读取侧 ai.service.ts 用 JSON.parse,这里必须对应序列化
+    if (dto.strongSubjects !== undefined) data.strongSubjects = JSON.stringify(dto.strongSubjects);
+    if (dto.weakSubjects !== undefined) data.weakSubjects = JSON.stringify(dto.weakSubjects);
     if (dto.careerIntention !== undefined) data.careerIntention = dto.careerIntention;
     if (dto.remainingMonths !== undefined) data.remainingMonths = dto.remainingMonths;
     return this.prisma.studentProfile.upsert({

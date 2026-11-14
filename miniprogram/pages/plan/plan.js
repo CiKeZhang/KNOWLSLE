@@ -9,6 +9,9 @@ Page({
     saving: false,
   },
 
+  // 请求序号:快速切换周期时丢弃旧响应,避免旧数据覆盖新 tab
+  _seq: 0,
+
   onShow() {
     if (!getApp().checkLogin()) return;
     this.load();
@@ -19,10 +22,22 @@ Page({
     this.load();
   },
 
+  // wxml 的 bindtap 只能是方法名,不能用内联赋值表达式
+  startEdit() {
+    this.setData({ editing: true });
+  },
+
+  cancelEdit() {
+    this.setData({ editing: false });
+    this.load();
+  },
+
   async load() {
+    const seq = ++this._seq;
     try {
       const url = this.data.period === 'weekly' ? '/study-plan/me/weekly' : '/study-plan/me/monthly';
       const data = await getApp().request({ url });
+      if (seq !== this._seq) return;
       this.setData({ plan: data, tasks: data.tasks || [] });
     } catch (e) {
       // 静默
@@ -30,8 +45,10 @@ Page({
   },
 
   toggleTask(e) {
+    if (!this.data.plan) return;
     const index = e.currentTarget.dataset.index;
     const tasks = [...this.data.tasks];
+    if (!tasks[index]) return;
     tasks[index].done = !tasks[index].done;
     this.setData({ tasks });
     getApp().request({
@@ -54,6 +71,7 @@ Page({
   },
 
   async save() {
+    if (!this.data.plan) return;
     this.setData({ saving: true });
     try {
       await getApp().request({
@@ -64,7 +82,7 @@ Page({
       wx.showToast({ title: '已保存', icon: 'success' });
       this.setData({ editing: false });
     } catch (e) {
-      // 静默
+      // 错误提示已由 app.js 统一展示
     } finally {
       this.setData({ saving: false });
     }

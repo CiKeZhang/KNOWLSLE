@@ -4,11 +4,15 @@ const tabbar = require('../../utils/tabbar.js');
 
 Page({
   onTabTap(e) { tabbar.onTap.call(this, e); },
+
+  // 请求序号:切换筛选条件后丢弃在途的旧分页响应
+  _seq: 0,
+
   data: {
     students: [],
     keyword: '',
     stage: '',
-    loading: true,
+    loading: false,
     page: 1,
     hasMore: true,
     onlyMine: false,
@@ -22,6 +26,7 @@ Page({
       page: 1,
       students: [],
       hasMore: true,
+      loading: false,
       canFilterMine: userInfo.role === 'MAJOR_MENTOR',
     });
     this.loadStudents();
@@ -43,13 +48,16 @@ Page({
   },
 
   loadStudents() {
-    if (!this.data.hasMore) return;
+    // 防重:快速上滑/重复 onShow 时并发请求同一页会 concat 出重复学生
+    if (this.data.loading || !this.data.hasMore) return;
+    const seq = ++this._seq;
     this.setData({ loading: true });
 
+    // 与后端 StudyStage 枚举一致(旧映射有 6 个阶段对不上,会显示空白)
     const stageMap = {
-      NOT_STARTED: '未开始', CHOOSING: '择校中', FOUNDATION: '基础阶段',
-      STRENGTHEN: '强化阶段', SPRINT: '冲刺阶段', EXAM: '初试',
-      ADJUSTMENT: '复试调剂', ADMITTED: '已上岸',
+      NOT_STARTED: '未开始', CHOOSING: '择校中', BASIC: '基础复习',
+      STRENGTHENING: '强化刷题', SPRINT: '冲刺', EXAM_DONE: '初试结束',
+      REEXAM_PREP: '备战复试', ADJUSTING: '调剂中', FINISHED: '考研结束',
     };
     const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo') || {};
     Promise.all([
@@ -65,6 +73,8 @@ Page({
       }).catch(() => null),
       getApp().request({ url: '/mentor/watched' }).catch(() => []),
     ]).then(([data, watched]) => {
+      // 筛选条件已变/已有更新的请求,丢弃这份旧响应
+      if (seq !== this._seq) return;
       if (!data) { this.setData({ loading: false, hasMore: false }); return; }
       const items = data.items || [];
       const watchedIds = new Set((watched || []).map((w) => w.studentId));
@@ -84,7 +94,7 @@ Page({
         loading: false,
       });
     }).catch(() => {
-      this.setData({ loading: false });
+      if (seq === this._seq) this.setData({ loading: false });
     });
   },
 

@@ -120,6 +120,7 @@ Page({
     wx.login({
       success(loginRes) {
         if (!loginRes.code) {
+          wx.hideLoading();
           wx.showToast({ title: '微信登录失败', icon: 'none' });
           return;
         }

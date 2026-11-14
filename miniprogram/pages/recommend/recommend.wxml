@@ -19,7 +19,9 @@
     </view>
     <view class="form-item">
       <text class="label">院校偏好</text>
-      <input class="input" placeholder="985/211/双一流/双非" value="{{form.schoolTierPref}}" bindinput="onFieldInput" data-field="schoolTierPref" />
+      <picker mode="selector" range="{{schoolTiers}}" range-key="label" value="{{tierIndex}}" bindchange="onTierChange">
+        <view class="input">{{schoolTiers[tierIndex].label}}</view>
+      </picker>
     </view>
     <view class="form-item">
       <text class="label">目标专业</text>

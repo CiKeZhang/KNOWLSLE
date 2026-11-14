@@ -160,12 +160,23 @@ export class NotificationsService {
     }
   }
 
+  /** SystemConfig.value 是 String 字段,统一按 JSON 文本解析,解析失败退化为默认值 */
+  private parseConfig(value?: string | null): Record<string, any> {
+    if (!value) return {};
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
   /** 连续 3 周进度无更新 */
   private async detectProgressStale() {
     const config = await this.prisma.systemConfig.findUnique({
       where: { key: 'alert_rules' },
     });
-    const staleWeeks = (config?.value as any)?.progressStaleWeeks ?? 3;
+    const staleWeeks = this.parseConfig(config?.value).progressStaleWeeks ?? 3;
     const since = dayjs().subtract(staleWeeks, 'week').toDate();
     const recentRecords = await this.prisma.checkInRecord.findMany({
       where: { weekStart: { gte: since } },
@@ -199,7 +210,7 @@ export class NotificationsService {
     const config = await this.prisma.systemConfig.findUnique({
       where: { key: 'alert_rules' },
     });
-    const days = (config?.value as any)?.loginInactiveDays ?? 15;
+    const days = this.parseConfig(config?.value).loginInactiveDays ?? 15;
     const since = dayjs().subtract(days, 'day').toDate();
     const students = await this.prisma.user.findMany({
       where: {
@@ -314,10 +325,16 @@ export class NotificationsService {
     const c = await this.prisma.systemConfig.findUnique({
       where: { key: 'notify_channels' },
     });
-    return (c?.value as unknown as NotifyChannelConfig) ?? {
+    const cfg = this.parseConfig(c?.value);
+    const defaults: NotifyChannelConfig = {
       in_app: { enabled: true },
       wecom: { enabled: false, corp_id: '', agent_id: '', secret: '' },
       sms: { enabled: false, provider: 'aliyun', access_key_id: '', access_key_secret: '', sign_name: '' },
+    };
+    return {
+      in_app: { ...defaults.in_app, ...(cfg.in_app ?? {}) },
+      wecom: { ...defaults.wecom, ...(cfg.wecom ?? {}) },
+      sms: { ...defaults.sms, ...(cfg.sms ?? {}) },
     };
   }
 

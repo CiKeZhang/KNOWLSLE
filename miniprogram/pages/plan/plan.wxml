@@ -33,12 +33,12 @@
 
     <view class="plan-actions">
       <block wx:if="{{!editing}}">
-        <button class="btn-edit" bindtap="editing=true">手动调整</button>
+        <button class="btn-edit" bindtap="startEdit">手动调整</button>
       </block>
       <block wx:else>
         <button class="btn-add" bindtap="addTask">+ 新增任务</button>
         <button class="btn-save" bindtap="save" loading="{{saving}}">保存</button>
-        <button class="btn-cancel" bindtap="editing=false">取消</button>
+        <button class="btn-cancel" bindtap="cancelEdit">取消</button>
       </block>
     </view>
   </view>

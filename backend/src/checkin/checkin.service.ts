@@ -310,10 +310,13 @@ export class CheckInService {
     if (!rule.makeupEnabled) {
       throw new BadRequestException('系统已关闭补卡功能');
     }
-    const weekStart = new Date(dto.weekStart);
-    if (isNaN(weekStart.getTime())) {
+    const parsedWeek = new Date(dto.weekStart);
+    if (isNaN(parsedWeek.getTime())) {
       throw new BadRequestException('weekStart 格式错误');
     }
+    // 归一化到周一 00:00:所有打卡记录、studentId_weekStart 唯一键与周统计都以周一为准,
+    // 否则传周六会绕过去重并在审批后插入一条统计查不到的"孤儿"记录
+    const weekStart = WeekUtil.weekStart(parsedWeek);
     // 检查目标周是否已有记录
     const existing = await this.prisma.checkInRecord.findUnique({
       where: { studentId_weekStart: { studentId, weekStart } },

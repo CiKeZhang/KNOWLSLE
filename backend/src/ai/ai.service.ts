@@ -136,8 +136,10 @@ export class AiService {
     const record = await this.prisma.aIRecommendation.create({
       data: {
         studentId,
-        inputParams: input as any,
-        result: { items: flat } as any,
+        // schema 中 inputParams / result 都是 String,必须序列化后写入,
+        // 否则 Prisma 运行时会抛 PrismaClientValidationError 导致整个推荐接口 500
+        inputParams: JSON.stringify(input),
+        result: JSON.stringify({ items: flat }),
         llmSummary,
       },
     });

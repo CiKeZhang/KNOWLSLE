@@ -283,13 +283,20 @@ Page({
       this.loadCheckin();
       this.gotoCollectIfNeeded();
     } catch (e) {
+      // app.js 对 HTTP 错误 reject(res)(含 statusCode),网络层失败 reject(err)。
+      // 业务 4xx(重复打卡、参数错误等)不能伪装成"网络异常已缓存",否则用户以为已保存。
+      const isNetworkError = !(e && typeof e.statusCode === 'number');
+      if (!isNetworkError) {
+        // 具体原因已由 app.js 统一 toast 展示
+        return;
+      }
       try {
         const pending = wx.getStorageSync('pending_checkin') || [];
         pending.push({ payload, cachedAt: Date.now() });
         wx.setStorageSync('pending_checkin', pending);
-        wx.showToast({ title: '网络异常,已缓存待同步', icon: 'none' });
+        wx.showToast({ title: '网络异常,已本地暂存', icon: 'none' });
       } catch (err) {
-        // ignore
+        wx.showToast({ title: '网络异常,提交失败', icon: 'none' });
       }
     } finally {
       this.setData({ submitting: false });
