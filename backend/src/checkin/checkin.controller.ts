@@ -116,13 +116,13 @@ export class CheckInController {
     @CurrentUser() user: AuthUser,
     @Body() dto: ApproveMakeupDto,
   ) {
-    return this.checkin.approveMakeup(id, user.id, dto);
+    return this.checkin.approveMakeup(id, user.id, dto, user);
   }
 
   @Get('student/:id/history')
   @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN, UserRole.SYS_ADMIN)
   @ApiOperation({ summary: '导师端:查看某学生打卡历史' })
-  studentHistory(@Param('id', ParseIntPipe) id: number) {
-    return this.checkin.listByStudent(id);
+  studentHistory(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.checkin.listByStudent(id, 52, user);
   }
 }

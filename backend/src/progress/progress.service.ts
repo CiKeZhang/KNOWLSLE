@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { OperationLogService } from '../common/services/operation-log.service';
 import { CryptoUtil } from '../common/utils/crypto.util';
 import { UpdateArchiveDto, UpdateStageDto, UpdateProfileDto } from './dto/progress.dto';
+import { AuthUser } from '../common/decorators/current-user.decorator';
+import { assertStudentVisible } from '../common/utils/student-scope';
 
 // 需加密存储的敏感字段(学生考研成绩、目标院校等)
 const SENSITIVE_ARCHIVE_FIELDS = [
@@ -262,8 +264,9 @@ export class ProgressService {
     return { ok: true, stage };
   }
 
-  /** 导师端:查看某学生完整档案 */
-  async getStudentArchive(studentId: number) {
+  /** 导师端:查看某学生完整档案(仅限管辖范围内的学生) */
+  async getStudentArchive(studentId: number, actor?: AuthUser) {
+    if (actor) await assertStudentVisible(this.prisma, actor, studentId);
     const student = await this.prisma.user.findUnique({
       where: { id: studentId },
       include: {

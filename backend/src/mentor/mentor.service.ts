@@ -1,9 +1,14 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OperationLogService } from '../common/services/operation-log.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WeekUtil, dayjs } from '../common/utils/week.util';
-import { buildStudentScope } from '../common/utils/student-scope';
+import {
+  buildStudentScope,
+  assertStudentVisible,
+  listVisibleStudentIds,
+} from '../common/utils/student-scope';
+import { AuthUser } from '../common/decorators/current-user.decorator';
 import { CryptoUtil } from '../common/utils/crypto.util';
 import { AlertType, AlertStatus, CheckInStatus, HelpStatus, HelpType } from '../common/enums';
 
@@ -283,8 +288,14 @@ export class MentorService {
     return items;
   }
 
-  /** 处理预警(标记已处理) */
-  async handleAlert(alertId: number, mentorId: number) {
+  /** 处理预警(标记已处理,仅限管辖范围内的学生) */
+  async handleAlert(alertId: number, mentorId: number, actor?: AuthUser) {
+    const alert = await this.prisma.alert.findUnique({
+      where: { id: alertId },
+      select: { studentId: true },
+    });
+    if (!alert) throw new NotFoundException('预警不存在');
+    if (actor) await assertStudentVisible(this.prisma, actor, alert.studentId);
     return this.prisma.alert.update({
       where: { id: alertId },
       data: { status: AlertStatus.RESOLVED, handledBy: mentorId, handledAt: new Date() },
@@ -292,7 +303,8 @@ export class MentorService {
   }
 
   /** 标记重点关注学生 */
-  async watchStudent(studentId: number, mentorId: number, note?: string) {
+  async watchStudent(studentId: number, mentorId: number, note?: string, actor?: AuthUser) {
+    if (actor) await assertStudentVisible(this.prisma, actor, studentId);
     return this.prisma.watchedStudent.upsert({
       where: { studentId_mentorId: { studentId, mentorId } },
       update: { note, pinned: true },
@@ -301,16 +313,17 @@ export class MentorService {
   }
 
   /** 取消关注 */
-  async unwatchStudent(studentId: number, mentorId: number) {
+  async unwatchStudent(studentId: number, mentorId: number, actor?: AuthUser) {
+    if (actor) await assertStudentVisible(this.prisma, actor, studentId);
     await this.prisma.watchedStudent.delete({
       where: { studentId_mentorId: { studentId, mentorId } },
     }).catch(() => undefined);
     return { ok: true };
   }
 
-  /** 重点关注学生列表 */
-  async listWatched(mentorId: number) {
-    return this.prisma.watchedStudent.findMany({
+  /** 重点关注学生列表(过滤掉已不在管辖范围内的学生) */
+  async listWatched(mentorId: number, actor?: AuthUser) {
+    const items = await this.prisma.watchedStudent.findMany({
       where: { mentorId },
       orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
       include: {
@@ -325,6 +338,9 @@ export class MentorService {
         },
       },
     });
+    if (!actor) return items;
+    const visible = new Set(await listVisibleStudentIds(this.prisma, actor));
+    return items.filter((w) => visible.has(w.studentId));
   }
 
   /** 帮扶申请列表 */
@@ -354,8 +370,14 @@ export class MentorService {
     return items;
   }
 
-  /** 接受帮扶申请(分配给自己) */
-  async assignHelp(applicationId: number, mentorId: number) {
+  /** 接受帮扶申请(分配给自己,仅限管辖范围内的学生) */
+  async assignHelp(applicationId: number, mentorId: number, actor?: AuthUser) {
+    const app = await this.prisma.helpApplication.findUnique({
+      where: { id: applicationId },
+      select: { studentId: true },
+    });
+    if (!app) throw new NotFoundException('帮扶申请不存在');
+    if (actor) await assertStudentVisible(this.prisma, actor, app.studentId);
     return this.prisma.helpApplication.update({
       where: { id: applicationId },
       data: { status: HelpStatus.IN_PROGRESS, assigneeId: mentorId },
@@ -363,7 +385,19 @@ export class MentorService {
   }
 
   /** 完成帮扶:记录帮扶内容 */
-  async recordHelp(applicationId: number, mentorId: number, content: string, effect?: string) {
+  async recordHelp(
+    applicationId: number,
+    mentorId: number,
+    content: string,
+    effect?: string,
+    actor?: AuthUser,
+  ) {
+    const app = await this.prisma.helpApplication.findUnique({
+      where: { id: applicationId },
+      select: { studentId: true },
+    });
+    if (!app) throw new NotFoundException('帮扶申请不存在');
+    if (actor) await assertStudentVisible(this.prisma, actor, app.studentId);
     return this.prisma.$transaction(async (tx) => {
       const record = await tx.helpRecord.create({
         data: { applicationId, mentorId, content, effect },
@@ -377,7 +411,20 @@ export class MentorService {
   }
 
   /** 一键批量发送提醒通知(多通道:站内信+企业微信+短信) */
-  async batchNotify(studentIds: number[], title: string, content: string, fromMentorId: number) {
+  async batchNotify(
+    studentIds: number[],
+    title: string,
+    content: string,
+    fromMentorId: number,
+    actor?: AuthUser,
+  ) {
+    if (actor) {
+      const visible = new Set(await listVisibleStudentIds(this.prisma, actor));
+      const denied = studentIds.filter((id) => !visible.has(id));
+      if (denied.length > 0) {
+        throw new ForbiddenException('通知名单包含无权操作的学生');
+      }
+    }
     const result = await this.notifications.dispatch(studentIds, { title, content });
     await this.opLog.record(fromMentorId, 'batch_notify', 'students', {
       count: studentIds.length,

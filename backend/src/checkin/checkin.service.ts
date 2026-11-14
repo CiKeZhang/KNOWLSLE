@@ -11,7 +11,8 @@ import { dayjs } from '../common/utils/week.util';
 import { SubmitCheckInDto, MakeupApplicationDto, ApproveMakeupDto, CheckInFilterDto } from './dto/checkin.dto';
 import { CheckInStatus, AlertType, AlertStatus, ApprovalStatus } from '../common/enums';
 import { AiDifficultyService } from '../ai/services/ai-difficulty.service';
-import { buildStudentScope } from '../common/utils/student-scope';
+import { buildStudentScope, assertStudentVisible } from '../common/utils/student-scope';
+import { AuthUser } from '../common/decorators/current-user.decorator';
 
 @Injectable()
 export class CheckInService {
@@ -353,11 +354,13 @@ export class CheckInService {
     applicationId: number,
     approverId: number,
     dto: ApproveMakeupDto,
+    actor?: AuthUser,
   ) {
     const app = await this.prisma.makeupCheckInApplication.findUnique({
       where: { id: applicationId },
     });
     if (!app) throw new NotFoundException('补卡申请不存在');
+    if (actor) await assertStudentVisible(this.prisma, actor, app.studentId);
     if (app.status !== ApprovalStatus.PENDING) {
       throw new ConflictException('该申请已处理');
     }
@@ -592,8 +595,9 @@ export class CheckInService {
     });
   }
 
-  /** 获取打卡记录列表(导师查看学生详情时使用) */
-  async listByStudent(studentId: number, limit = 52) {
+  /** 获取打卡记录列表(导师查看学生详情时使用,仅限管辖范围) */
+  async listByStudent(studentId: number, limit = 52, actor?: AuthUser) {
+    if (actor) await assertStudentVisible(this.prisma, actor, studentId);
     return this.prisma.checkInRecord.findMany({
       where: { studentId },
       orderBy: { weekStart: 'desc' },

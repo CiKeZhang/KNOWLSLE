@@ -148,7 +148,7 @@ export class MentorController {
   @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN)
   @ApiOperation({ summary: '处理预警(标记已处理)' })
   handleAlert(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
-    return this.mentor.handleAlert(id, user.id);
+    return this.mentor.handleAlert(id, user.id, user);
   }
 
   @Post('watch/:studentId')
@@ -159,21 +159,21 @@ export class MentorController {
     @CurrentUser() user: AuthUser,
     @Body() dto: WatchDto,
   ) {
-    return this.mentor.watchStudent(studentId, user.id, dto.note);
+    return this.mentor.watchStudent(studentId, user.id, dto.note, user);
   }
 
   @Delete('watch/:studentId')
   @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN)
   @ApiOperation({ summary: '取消重点关注' })
   unwatch(@Param('studentId', ParseIntPipe) studentId: number, @CurrentUser() user: AuthUser) {
-    return this.mentor.unwatchStudent(studentId, user.id);
+    return this.mentor.unwatchStudent(studentId, user.id, user);
   }
 
   @Get('watched')
   @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN)
   @ApiOperation({ summary: '我的重点关注学生列表' })
   watched(@CurrentUser() user: AuthUser) {
-    return this.mentor.listWatched(user.id);
+    return this.mentor.listWatched(user.id, user);
   }
 
   @Get('help-applications')
@@ -196,7 +196,7 @@ export class MentorController {
   @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN)
   @ApiOperation({ summary: '接受帮扶申请(分配给自己对接)' })
   assignHelp(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
-    return this.mentor.assignHelp(id, user.id);
+    return this.mentor.assignHelp(id, user.id, user);
   }
 
   @Post('help-applications/:id/record')
@@ -207,13 +207,13 @@ export class MentorController {
     @CurrentUser() user: AuthUser,
     @Body() dto: RecordHelpDto,
   ) {
-    return this.mentor.recordHelp(id, user.id, dto.content, dto.effect);
+    return this.mentor.recordHelp(id, user.id, dto.content, dto.effect, user);
   }
 
   @Post('batch-notify')
   @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN)
   @ApiOperation({ summary: '一键批量发送提醒通知(站内信)' })
   batchNotify(@CurrentUser() user: AuthUser, @Body() dto: BatchNotifyDto) {
-    return this.mentor.batchNotify(dto.studentIds, dto.title, dto.content, user.id);
+    return this.mentor.batchNotify(dto.studentIds, dto.title, dto.content, user.id, user);
   }
 }

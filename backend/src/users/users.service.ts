@@ -14,6 +14,8 @@ import {
   BatchImportDto,
 } from './dto/user.dto';
 import { UserRole, UserStatus } from '../common/enums';
+import { AuthUser } from '../common/decorators/current-user.decorator';
+import { buildStudentScope } from '../common/utils/student-scope';
 
 @Injectable()
 export class UsersService {
@@ -71,26 +73,36 @@ export class UsersService {
     return rest;
   }
 
-  async list(q: ListUsersDto) {
+  /**
+   * 用户列表。管理员可查全部用户;导师/辅导员只能查到自己管辖范围内的学生,
+   * 且请求参数不能覆盖范围条件(否则 GET /users?role=STUDENT 就能拉到全院学生)。
+   */
+  async list(q: ListUsersDto, actor?: AuthUser) {
     const page = q.page ?? 1;
     const pageSize = Math.min(q.pageSize ?? 20, 100);
-    const where: Record<string, unknown> = {};
-    if (q.role) where.role = q.role;
-    if (q.departmentId) where.departmentId = q.departmentId;
-    if (q.majorId) where.majorId = q.majorId;
-    if (q.classId) where.classId = q.classId;
+    const filters: Record<string, unknown> = {};
+    if (q.role) filters.role = q.role;
+    if (q.departmentId) filters.departmentId = q.departmentId;
+    if (q.majorId) filters.majorId = q.majorId;
+    if (q.classId) filters.classId = q.classId;
     if (q.keyword) {
-      where.OR = [
+      filters.OR = [
         { name: { contains: q.keyword } },
         { username: { contains: q.keyword } },
         { studentNo: { contains: q.keyword } },
         { staffNo: { contains: q.keyword } },
       ];
     }
+    // 非管理员:强制叠加学生数据范围(scope 与 filters 用 AND 并列,filters 无法覆盖)
+    let where: Record<string, unknown> = filters;
+    if (actor && actor.role !== UserRole.SYS_ADMIN && actor.role !== UserRole.ACADEMIC_ADMIN) {
+      const scope = await buildStudentScope(this.prisma, actor);
+      where = { AND: [scope, filters] };
+    }
     const [total, items] = await Promise.all([
-      this.prisma.user.count({ where }),
+      this.prisma.user.count({ where: where as any }),
       this.prisma.user.findMany({
-        where,
+        where: where as any,
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { id: 'desc' },

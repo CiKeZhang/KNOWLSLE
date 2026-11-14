@@ -60,7 +60,7 @@ export class ProgressController {
   @Get('student/:id')
   @Roles(UserRole.COUNSELOR, UserRole.MAJOR_MENTOR, UserRole.ACADEMIC_ADMIN, UserRole.SYS_ADMIN)
   @ApiOperation({ summary: '导师端:学生完整档案(档案+历史+打卡+AI+帮扶)' })
-  studentArchive(@Param('id', ParseIntPipe) id: number) {
-    return this.progress.getStudentArchive(id);
+  studentArchive(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
+    return this.progress.getStudentArchive(id, user);
   }
 }

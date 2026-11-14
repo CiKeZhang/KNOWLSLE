@@ -34,8 +34,8 @@ export class UsersController {
   @Get()
   @Roles(UserRole.ACADEMIC_ADMIN, UserRole.SYS_ADMIN, UserRole.COUNSELOR, UserRole.MAJOR_MENTOR)
   @ApiOperation({ summary: '用户列表(按权限可见范围)' })
-  list(@Query() q: ListUsersDto) {
-    return this.users.list(q);
+  list(@Query() q: ListUsersDto, @CurrentUser() user: AuthUser) {
+    return this.users.list(q, user);
   }
 
   @Get(':id')
