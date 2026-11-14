@@ -111,6 +111,7 @@ export class MentorController {
     @Query('minScore') minScore?: string,
     @Query('maxScore') maxScore?: string,
     @Query('keyword') keyword?: string,
+    @Query('mentorId') mentorId?: string,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
@@ -126,6 +127,7 @@ export class MentorController {
       minScore: minScore ? Number(minScore) : undefined,
       maxScore: maxScore ? Number(maxScore) : undefined,
       keyword,
+      filterMentorId: mentorId ? Number(mentorId) : undefined,
       page: page ? Number(page) : 1,
       pageSize: pageSize ? Number(pageSize) : 20,
     });

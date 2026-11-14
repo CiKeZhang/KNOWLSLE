@@ -180,7 +180,7 @@
       <view class="detail-row" wx:if="{{checkin.completedItems && checkin.completedItems.length}}">
         <text class="detail-label">完成事项</text>
         <view class="detail-value">
-          <text wx:for="{{checkin.completedItems}}" wx:key="*this" class="tag tag-primary">{{item}}</text>
+          <text wx:for="{{checkin.completedItems}}" wx:key="*this" class="tag tag-primary">{{itemLabelMap[item] || item}}</text>
         </view>
       </view>
       <view class="detail-row" wx:if="{{checkin.onlineConfirmationCompleted}}">

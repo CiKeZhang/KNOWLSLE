@@ -12,6 +12,12 @@
     <view class="search-btn" bindtap="onSearch">搜索</view>
   </view>
 
+  <!-- 我的学生 / 全部学生 切换 -->
+  <view class="filter-bar" wx:if="{{canFilterMine}}">
+    <view class="filter-chip {{onlyMine ? '' : 'active'}}" bindtap="toggleMine">全部学生</view>
+    <view class="filter-chip {{onlyMine ? 'active' : ''}}" bindtap="toggleMine">我的学生</view>
+  </view>
+
   <!-- 学生列表 -->
   <view class="student-list">
     <view
@@ -28,6 +34,7 @@
           {{item.studentNo}}
         </view>
         <view class="student-stage" wx:if="{{item.stage}}">阶段: {{item.stage}}</view>
+        <view class="student-mentor">导师: {{item.mentorName || '未选择'}}</view>
       </view>
       <view class="student-actions" catchtap="toggleWatch" data-id="{{item.id}}" data-watched="{{item.watched}}">
         <view class="watch-btn {{item.watched ? 'watched' : ''}}">

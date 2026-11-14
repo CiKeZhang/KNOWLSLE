@@ -4,6 +4,7 @@ import { OperationLogService } from '../common/services/operation-log.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WeekUtil, dayjs } from '../common/utils/week.util';
 import { buildStudentScope } from '../common/utils/student-scope';
+import { CryptoUtil } from '../common/utils/crypto.util';
 import { AlertType, AlertStatus, CheckInStatus, HelpStatus, HelpType } from '../common/enums';
 
 @Injectable()
@@ -13,6 +14,20 @@ export class MentorService {
     private readonly opLog: OperationLogService,
     private readonly notifications: NotificationsService,
   ) {}
+
+  /** 解密目标院校(加密存储),解密失败时返回空串,避免把密文展示给学生/导师 */
+  private decryptSchoolName(val: string | null | undefined): string {
+    if (!val) return '';
+    if (val.split(':').length === 3) {
+      try {
+        return CryptoUtil.decrypt(val);
+      } catch {
+        return '';
+      }
+    }
+    return val;
+  }
+
 
   /**
    * 考研进度全景看板:
@@ -62,7 +77,7 @@ export class MentorService {
       const m = majorMap.get(majorName) ?? { major: majorName, total: 0 };
       m.total += 1;
       majorMap.set(majorName, m);
-      const schoolName = s.progressArchive?.targetSchoolName;
+      const schoolName = this.decryptSchoolName(s.progressArchive?.targetSchoolName);
       if (schoolName) {
         const tier = schoolMap.get(schoolName) ?? 'DOUBLE_NON';
         tierDistribution[tier] = (tierDistribution[tier] ?? 0) + 1;
@@ -152,12 +167,15 @@ export class MentorService {
     maxScore?: number;
     checkinStatus?: string;
     keyword?: string;
+    /** 按指定导师筛选(仅全量可见的账号有效,用于区分"我的学生") */
+    filterMentorId?: number;
     page?: number;
     pageSize?: number;
   }) {
     const page = params.page ?? 1;
     const pageSize = Math.min(params.pageSize ?? 20, 100);
     const studentWhere = await this.buildStudentScope(params);
+    if (params.filterMentorId) studentWhere.mentorId = params.filterMentorId;
     if (params.classId) studentWhere.classId = params.classId;
     if (params.majorId) studentWhere.majorId = params.majorId;
     if (params.stage) {
@@ -183,6 +201,7 @@ export class MentorService {
           class: { select: { name: true } },
           major: { select: { name: true } },
           studentProfile: true,
+          mentor: { select: { id: true, name: true, staffNo: true } },
           progressArchive: { select: { targetSchoolName: true, examTotal: true, publicCourseProgress: true, majorCourseProgress: true } },
         },
       }),
@@ -202,6 +221,12 @@ export class MentorService {
       const { passwordHash, ...rest } = u as any;
       return {
         ...rest,
+        progressArchive: rest.progressArchive
+          ? {
+              ...rest.progressArchive,
+              targetSchoolName: this.decryptSchoolName(rest.progressArchive.targetSchoolName),
+            }
+          : rest.progressArchive,
         thisWeekCheckin: checkinMap.get(u.id) ?? 'MISSING',
       };
     });

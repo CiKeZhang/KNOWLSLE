@@ -24,6 +24,10 @@ const CHECK_ITEMS = [
   { id: 'plan_review', text: '学习计划复盘' },
 ];
 
+// 完成事项 id -> 中文名(历史打卡记录只存 id,展示时需翻译)
+const ITEM_LABEL_MAP = {};
+CHECK_ITEMS.forEach((it) => { ITEM_LABEL_MAP[it.id] = it.text; });
+
 const tabbar = require('../../utils/tabbar.js');
 const subjectsUtil = require('../../utils/subjects.js');
 
@@ -33,6 +37,7 @@ Page({
     checkin: { status: 'NOT_SUBMITTED' },
     stages: STAGES,
     stageLabelMap: STAGE_LABEL_MAP,
+    itemLabelMap: ITEM_LABEL_MAP,
     rounds: subjectsUtil.ROUNDS,
     subStages: subjectsUtil.SUB_STAGES,
     checkItems: CHECK_ITEMS.map((it) => ({ id: it.id, text: it.text, checked: false })),

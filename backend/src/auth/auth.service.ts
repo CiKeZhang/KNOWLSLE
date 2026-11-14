@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, UserStatus } from '../common/enums';
 import { Logger } from '@nestjs/common';
 import { OperationLogService } from '../common/services/operation-log.service';
+import { TEST_ACCOUNT_STAFF_NO } from '../common/utils/student-scope';
 
 @Injectable()
 export class AuthService {
@@ -74,7 +75,7 @@ export class AuthService {
    * 测试登录:凭测试口令直接切换为指定学生/导师账号
    * 仅修改登录态,不写入 wechatOpenId,因此不会占用/绑定任何微信
    */
-  async testLogin(account: string, secret: string) {
+  async testLogin(account: string, secret: string, asMentor = false) {
     const expected = this.config.get<string>('TEST_LOGIN_SECRET') || 'kygl-test-2026';
     if (!secret || secret !== expected) {
       throw new UnauthorizedException('测试口令错误');
@@ -90,15 +91,27 @@ export class AuthService {
     });
     if (!user) throw new BadRequestException('账号不存在或已停用');
 
+    // 仅测试账号可切换为导师端身份
+    const isTestAccount =
+      user.staffNo === TEST_ACCOUNT_STAFF_NO || user.username === TEST_ACCOUNT_STAFF_NO;
+    const mentorMode = asMentor && isTestAccount;
+
     const token = await this.jwt.signAsync(
-      { sub: user.id, username: user.username, role: user.role },
+      {
+        sub: user.id,
+        username: user.username,
+        role: user.role,
+        ...(mentorMode ? { actAs: 'MENTOR' } : {}),
+      },
       {
         secret: this.config.get<string>('JWT_SECRET', 'please_change_jwt_secret_in_production'),
         expiresIn: this.config.get<string>('JWT_EXPIRES_IN', '12h'),
       },
     );
 
-    this.opLog.record(user.id, 'test_login', 'auth', { account: acc }).catch(() => undefined);
+    this.opLog
+      .record(user.id, 'test_login', 'auth', { account: acc, mentorMode })
+      .catch(() => undefined);
 
     return {
       accessToken: token,
@@ -106,7 +119,7 @@ export class AuthService {
         id: user.id,
         username: user.username,
         name: user.name,
-        role: user.role,
+        role: mentorMode ? 'MAJOR_MENTOR' : user.role,
         studentNo: user.studentNo,
         staffNo: user.staffNo,
         majorName: user.majorName,

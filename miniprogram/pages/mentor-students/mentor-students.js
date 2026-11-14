@@ -11,11 +11,25 @@ Page({
     loading: true,
     page: 1,
     hasMore: true,
+    onlyMine: false,
+    canFilterMine: false,
   },
 
   onShow() {
     tabbar.refresh(this, 'students');
-    this.setData({ page: 1, students: [], hasMore: true });
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo') || {};
+    this.setData({
+      page: 1,
+      students: [],
+      hasMore: true,
+      canFilterMine: userInfo.role === 'MAJOR_MENTOR',
+    });
+    this.loadStudents();
+  },
+
+  // 切换「全部学生 / 我的学生」
+  toggleMine() {
+    this.setData({ onlyMine: !this.data.onlyMine, page: 1, students: [], hasMore: true });
     this.loadStudents();
   },
 
@@ -37,10 +51,17 @@ Page({
       STRENGTHEN: '强化阶段', SPRINT: '冲刺阶段', EXAM: '初试',
       ADJUSTMENT: '复试调剂', ADMITTED: '已上岸',
     };
+    const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo') || {};
     Promise.all([
       getApp().request({
         url: '/mentor/students',
-        data: { keyword: this.data.keyword, stage: this.data.stage, page: this.data.page, pageSize: 20 },
+        data: {
+          keyword: this.data.keyword,
+          stage: this.data.stage,
+          page: this.data.page,
+          pageSize: 20,
+          mentorId: this.data.onlyMine ? userInfo.id : '',
+        },
       }).catch(() => null),
       getApp().request({ url: '/mentor/watched' }).catch(() => []),
     ]).then(([data, watched]) => {
@@ -53,6 +74,7 @@ Page({
         studentNo: u.studentNo,
         majorName: u.majorName || (u.major && u.major.name) || '',
         stage: (u.studentProfile && stageMap[u.studentProfile.currentStage]) || '',
+        mentorName: (u.mentor && u.mentor.name) || '',
         watched: watchedIds.has(u.id),
       }));
       this.setData({

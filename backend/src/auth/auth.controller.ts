@@ -54,7 +54,7 @@ export class AuthController {
   @Post('test-login')
   @ApiOperation({ summary: '测试登录:凭口令切换为任意学号/工号账号(不绑定微信)' })
   testLogin(@Body() dto: TestLoginDto) {
-    return this.auth.testLogin(dto.account, dto.secret);
+    return this.auth.testLogin(dto.account, dto.secret, dto.asMentor === true);
   }
 
   @Public()

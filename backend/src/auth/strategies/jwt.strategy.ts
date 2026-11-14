@@ -4,6 +4,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthUser } from '../../common/decorators/current-user.decorator';
+import { TEST_ACCOUNT_STAFF_NO } from '../../common/utils/student-scope';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -26,6 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     sub: number;
     username: string;
     role: string;
+    actAs?: string;
   }): Promise<AuthUser> {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -44,11 +46,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user || user.status !== 'ACTIVE') {
       throw new UnauthorizedException('账号不可用或已停用');
     }
+
+    // 测试账号(李宇泽)可用「导师端模式」令牌访问导师接口,不影响其学生端令牌
+    const isTestAccount =
+      user.staffNo === TEST_ACCOUNT_STAFF_NO || user.username === TEST_ACCOUNT_STAFF_NO;
+    const effectiveRole = isTestAccount && payload.actAs === 'MENTOR' ? 'MAJOR_MENTOR' : user.role;
+
     return {
       id: user.id,
       username: user.username,
       name: user.name,
-      role: user.role,
+      role: effectiveRole,
       staffNo: user.staffNo ?? undefined,
       departmentId: user.departmentId ?? undefined,
       majorId: user.majorId ?? undefined,

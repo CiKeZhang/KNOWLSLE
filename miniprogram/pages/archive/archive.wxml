@@ -17,7 +17,7 @@
   <view class="card">
     <view class="card-title">指导老师</view>
     <view class="info-row">
-      <text class="info-label">专业导师</text>
+      <text class="info-label">指导老师</text>
       <text class="info-value" wx:if="{{advisors.majorMentor}}">{{advisors.majorMentor.name}}<text wx:if="{{advisors.majorMentor.staffNo}}" class="muted"> ({{advisors.majorMentor.staffNo}})</text></text>
       <text class="info-value muted" wx:else>暂未分配</text>
     </view>

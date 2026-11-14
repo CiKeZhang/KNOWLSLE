@@ -1,4 +1,4 @@
-import { IsString, MinLength, MaxLength, IsEnum, IsOptional, IsNumber } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsEnum, IsOptional, IsNumber, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -53,4 +53,9 @@ export class TestLoginDto {
   @ApiProperty({ description: '测试登录口令(服务端 TEST_LOGIN_SECRET)' })
   @IsString()
   secret: string;
+
+  @ApiProperty({ required: false, description: '是否以导师端身份进入(仅测试账号可用)' })
+  @IsOptional()
+  @IsBoolean()
+  asMentor?: boolean;
 }

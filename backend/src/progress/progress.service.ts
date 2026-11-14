@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OperationLogService } from '../common/services/operation-log.service';
 import { CryptoUtil } from '../common/utils/crypto.util';
@@ -60,6 +60,8 @@ function summarizeSubjectProgress(sp: Record<string, any> | null | undefined) {
 
 @Injectable()
 export class ProgressService {
+  private readonly logger = new Logger(ProgressService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly opLog: OperationLogService,
@@ -111,13 +113,20 @@ export class ProgressService {
     majorName?: string | null;
     majorId?: number | null;
     classId?: number | null;
+    mentorId?: number | null;
   }) {
     const mentorWhere: Record<string, unknown> = { role: 'MAJOR_MENTOR', status: 'ACTIVE' };
     if (student.majorName) mentorWhere.majorName = student.majorName;
     else if (student.majorId) mentorWhere.majorId = student.majorId;
     const hasMajor = !!(student.majorName || student.majorId);
 
-    const [majorMentor, klass] = await Promise.all([
+    // 学生自主选择的导师优先于按专业推导
+    const selectedMentor = student.mentorId
+      ? this.prisma.user.findUnique({ where: { id: student.mentorId }, select: ADVISOR_SELECT })
+      : Promise.resolve(null);
+
+    const [picked, derivedMentor, klass] = await Promise.all([
+      selectedMentor,
       hasMajor
         ? this.prisma.user.findFirst({ where: mentorWhere, select: ADVISOR_SELECT })
         : Promise.resolve(null),
@@ -129,7 +138,7 @@ export class ProgressService {
         : Promise.resolve(null),
     ]);
     return {
-      majorMentor: majorMentor ?? null,
+      majorMentor: picked ?? derivedMentor ?? null,
       counselor: klass?.counselor ?? null,
       className: klass?.name ?? null,
     };
@@ -160,7 +169,7 @@ export class ProgressService {
       }),
       this.prisma.user.findUnique({
         where: { id: studentId },
-        select: { majorId: true, majorName: true, classId: true },
+        select: { majorId: true, majorName: true, classId: true, mentorId: true },
       }),
     ]);
     // 解密敏感字段(考研成绩、目标院校)
@@ -170,6 +179,7 @@ export class ProgressService {
       majorName: me?.majorName,
       majorId: me?.majorId,
       classId: me?.classId,
+      mentorId: me?.mentorId,
     });
     // 组装时间线(前端按 title/desc/at 渲染)
     const timeline = this.buildTimeline(history, checkins);
@@ -297,6 +307,7 @@ export class ProgressService {
       majorName: student.majorName,
       majorId: student.majorId,
       classId: student.classId,
+      mentorId: student.mentorId,
     });
     const timeline = this.buildTimeline(history, checkins);
     return {
@@ -338,7 +349,9 @@ export class ProgressService {
           try {
             decrypted[f] = CryptoUtil.decrypt(raw);
           } catch {
-            // 可能是未加密的历史数据,保留原值
+            // 解密失败(通常是写入与读取时 ENCRYPTION_KEY 不一致),置空避免展示密文
+            this.logger.warn(`档案字段 ${f} 解密失败,已置空(请确认 ENCRYPTION_KEY 与写入时一致)`);
+            decrypted[f] = '';
           }
         }
       }

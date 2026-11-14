@@ -1,6 +1,28 @@
 // pages/login/login.js
 const config = require('../../config.js');
 
+// 测试登录:凭口令切换账号(asMentor=true 时以导师端身份进入,仅测试账号有效)
+function doTestLogin(account, asMentor) {
+  wx.showLoading({ title: '切换中...' });
+  getApp().request({
+    url: '/auth/test-login',
+    method: 'POST',
+    data: { account, secret: config.testSecret, asMentor: !!asMentor },
+  }).then((data) => {
+    wx.hideLoading();
+    wx.setStorageSync('token', data.accessToken);
+    wx.setStorageSync('userInfo', data.user);
+    getApp().globalData.token = data.accessToken;
+    getApp().globalData.userInfo = data.user;
+    wx.showToast({ title: '已切换为' + (data.user.name || account), icon: 'none' });
+    const isMentor = data.user.role && data.user.role !== 'STUDENT';
+    const homeUrl = isMentor ? '/pages/mentor-dashboard/mentor-dashboard' : '/pages/index/index';
+    setTimeout(() => wx.reLaunch({ url: homeUrl }), 600);
+  }).catch(() => {
+    wx.hideLoading();
+  });
+}
+
 Page({
   data: {
     step: 1,
@@ -74,24 +96,17 @@ Page({
           wx.showToast({ title: '请输入学号或工号', icon: 'none' });
           return;
         }
-        wx.showLoading({ title: '切换中...' });
-        getApp().request({
-          url: '/auth/test-login',
-          method: 'POST',
-          data: { account, secret: config.testSecret },
-        }).then((data) => {
-          wx.hideLoading();
-          wx.setStorageSync('token', data.accessToken);
-          wx.setStorageSync('userInfo', data.user);
-          getApp().globalData.token = data.accessToken;
-          getApp().globalData.userInfo = data.user;
-          wx.showToast({ title: '已切换为' + (data.user.name || account), icon: 'none' });
-          const isMentor = data.user.role && data.user.role !== 'STUDENT';
-          const homeUrl = isMentor ? '/pages/mentor-dashboard/mentor-dashboard' : '/pages/index/index';
-          setTimeout(() => wx.reLaunch({ url: homeUrl }), 600);
-        }).catch(() => {
-          wx.hideLoading();
-        });
+        // 测试账号可选进入学生端或导师端
+        if (account === config.testAccount) {
+          wx.showActionSheet({
+            itemList: ['以学生端进入', '以导师端进入'],
+            success(pick) {
+              doTestLogin(account, pick.tapIndex === 1);
+            },
+          });
+          return;
+        }
+        doTestLogin(account, false);
       },
     });
   },
