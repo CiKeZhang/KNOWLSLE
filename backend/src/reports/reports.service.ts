@@ -44,7 +44,10 @@ export class ReportsService {
     const schools = await this.prisma.school.findMany({
       select: { name: true, tier: true },
     });
-    const tierMap = new Map(schools.map((s) => [s.name, s.tier]));
+    // 显式声明元组返回类型,否则 TS 会把 Map 的 key/value 推断为 unknown
+    const tierMap = new Map<string, string>(
+      schools.map((s): [string, string] => [s.name, s.tier]),
+    );
 
     for (const s of students) {
       const stage = s.studentProfile?.currentStage ?? 'NOT_STARTED';
@@ -137,7 +140,10 @@ export class ReportsService {
     const records = await this.prisma.checkInRecord.findMany({
       where: { weekStart, studentId: { in: students.map((s) => s.id) } },
     });
-    const recMap = new Map(records.map((r) => [r.studentId, r]));
+    // 显式声明元组返回类型,避免 Map 值被推断为 unknown 后无法访问字段
+    const recMap = new Map<number, any>(
+      records.map((r): [number, any] => [r.studentId, r]),
+    );
 
     const wb = new ExcelJS.Workbook();
     wb.creator = '考研进度管控系统';

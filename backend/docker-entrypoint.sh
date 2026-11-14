@@ -1,21 +1,23 @@
 #!/bin/sh
-# 启动器: 确保 SQLite db 存在(优先用镜像内置 seed),然后启动 NestJS
+# 启动器:确保 SQLite 数据库就绪(优先级见 scripts/prepare-db.js),再启动 NestJS。
+# 数据目录可用 DATA_DIR 覆盖;在云托管服务配置里把持久卷挂到该路径即可实现数据持久化。
 
-echo "[entrypoint] DATABASE_URL=${DATABASE_URL}"
-mkdir -p /app/data /app/uploads
+DATA_DIR="${DATA_DIR:-/app/data}"
+export DATA_DIR
 
-# 从 DATABASE_URL 提取 db 路径 (file:/app/data/kygl.db -> /app/data/kygl.db)
-DB_PATH=$(echo "${DATABASE_URL}" | sed 's|^file:||')
+echo "[entrypoint] DATABASE_URL=${DATABASE_URL:-<unset>}"
+echo "[entrypoint] DATA_DIR=${DATA_DIR}"
+echo "[entrypoint] BACKUP_DIR=${BACKUP_DIR:-$DATA_DIR/backups}"
 
-if [ -f "${DB_PATH}" ]; then
-  echo "[entrypoint] 数据库已存在 (${DB_PATH}), 使用现有数据"
-elif [ -f /app/prisma/dev.db ]; then
-  echo "[entrypoint] 首次启动: 从镜像内置 seed 初始化数据库..."
-  cp /app/prisma/dev.db "${DB_PATH}"
-  echo "[entrypoint] seed 复制完成 ($(du -h "${DB_PATH}" | cut -f1))"
-else
-  echo "[entrypoint] 无 seed, 执行 prisma db push 建空表..."
+node /app/scripts/prepare-db.js
+code=$?
+
+if [ "$code" -eq 2 ]; then
+  echo "[entrypoint] 无可用数据,执行 prisma db push 建空表..."
   npx prisma db push --skip-generate 2>&1 || echo "[entrypoint] db push 失败,继续启动..."
+elif [ "$code" -ne 0 ]; then
+  echo "[entrypoint] 数据库准备失败(code=$code),终止启动"
+  exit 1
 fi
 
 echo "[entrypoint] 启动 NestJS: node dist/src/main.js"

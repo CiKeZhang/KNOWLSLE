@@ -68,7 +68,10 @@ export class MentorService {
     const allSchools = await this.prisma.school.findMany({
       select: { id: true, name: true, tier: true },
     });
-    const schoolMap = new Map(allSchools.map((s) => [s.name, s.tier]));
+    // 显式声明元组返回类型,否则 TS 会把 Map 的 key/value 推断为 unknown
+    const schoolMap = new Map<string, string>(
+      allSchools.map((s): [string, string] => [s.name, s.tier]),
+    );
 
     for (const s of students) {
       const stage = s.studentProfile?.currentStage ?? 'NOT_STARTED';

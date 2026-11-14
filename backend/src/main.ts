@@ -7,15 +7,23 @@ import compression from 'compression';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-import { PrismaService } from './prisma/prisma.service';
 import { CryptoUtil } from './common/utils/crypto.util';
+
+// 数据库快照以 base64 放在 JSON body 里回灌,默认的 100kb 限制不够用。
+// 关闭 Nest 内置 bodyParser,自行注册一个放宽上限的(仅放宽体积,行为不变)。
+// 用 require 避免为了这一处额外引入 @types/express 依赖。
+const express = require('express');
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
     cors: true,
+    bodyParser: false,
   });
+  app.use(express.json({ limit: '48mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '48mb' }));
+
   const config = app.get(ConfigService);
   const port = config.get<number>('PORT', 3000);
 
@@ -47,9 +55,8 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  // Prisma 生命周期
-  const prisma = app.get(PrismaService);
-  prisma.enableShutdownHooks(app);
+  // 收到 SIGTERM/SIGINT 时走 Nest 生命周期,让 Prisma 正常断开连接
+  app.enableShutdownHooks();
 
   // Swagger 文档
   const swaggerConfig = new DocumentBuilder()
@@ -63,6 +70,7 @@ async function bootstrap() {
 
   await app.listen(port, '0.0.0.0');
   logger.log(`🚀 服务启动: http://0.0.0.0:${port}/api`);
+  logger.log(`📦 数据库: ${config.get<string>('DATABASE_URL', 'file:/app/data/kygl.db')}`);
   logger.log(`📖 接口文档: http://localhost:${port}/api/docs`);
 }
 
