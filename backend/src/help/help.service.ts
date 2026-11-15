@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { OperationLogService } from '../common/services/operation-log.service';
 import { HelpType, HelpStatus, UserRole } from '../common/enums';
+import { assertStudentVisible } from '../common/utils/student-scope';
+import { AuthUser } from '../common/decorators/current-user.decorator';
 
 @Injectable()
 export class HelpService {
@@ -65,8 +67,8 @@ export class HelpService {
     });
   }
 
-  /** 学生:查看某帮扶申请的对接安排与回复 */
-  async detail(id: number, studentId?: number) {
+  /** 查看帮扶申请详情:学生传 user.id,导师/管理员传 AuthUser 做管辖范围校验 */
+  async detail(id: number, actor?: number | AuthUser) {
     const app = await this.prisma.helpApplication.findUnique({
       where: { id },
       include: {
@@ -78,8 +80,10 @@ export class HelpService {
       },
     });
     if (!app) throw new NotFoundException('帮扶申请不存在');
-    if (studentId && app.studentId !== studentId) {
-      throw new BadRequestException('无权查看该申请');
+    if (typeof actor === 'number') {
+      if (app.studentId !== actor) throw new BadRequestException('无权查看该申请');
+    } else if (actor) {
+      await assertStudentVisible(this.prisma, actor, app.studentId);
     }
     return app;
   }

@@ -202,33 +202,29 @@ export class MentorService {
     }
 
     const weekStart = WeekUtil.weekStart();
-    const [total, items] = await Promise.all([
-      this.prisma.user.count({ where: studentWhere }),
-      this.prisma.user.findMany({
-        where: studentWhere,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        orderBy: { id: 'asc' },
-        include: {
-          class: { select: { name: true } },
-          major: { select: { name: true } },
-          studentProfile: true,
-          mentor: { select: { id: true, name: true, staffNo: true } },
-          progressArchive: { select: { targetSchoolName: true, examTotal: true, publicCourseProgress: true, majorCourseProgress: true } },
-        },
-      }),
-    ]);
+    // 打卡状态/分数段过滤依赖关联数据,必须在分页之前完成;
+    // 否则 total 是过滤前的总数、每页条数不足且跨页会漏数据。当前规模(51 名学生)全量取出再切片开销可忽略。
+    const all = await this.prisma.user.findMany({
+      where: studentWhere,
+      orderBy: { id: 'asc' },
+      include: {
+        class: { select: { name: true } },
+        major: { select: { name: true } },
+        studentProfile: true,
+        mentor: { select: { id: true, name: true, staffNo: true } },
+        progressArchive: { select: { targetSchoolName: true, examTotal: true, publicCourseProgress: true, majorCourseProgress: true } },
+      },
+    });
 
     // 关联本周打卡状态
-    const ids = items.map((u) => u.id);
+    const ids = all.map((u) => u.id);
     const checkins = await this.prisma.checkInRecord.findMany({
       where: { studentId: { in: ids }, weekStart },
       select: { studentId: true, status: true },
     });
     const checkinMap = new Map(checkins.map((c) => [c.studentId, c.status]));
 
-    // 过滤打卡状态
-    let result = items.map((u) => {
+    let result = all.map((u) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { passwordHash, ...rest } = u as any;
       return {
@@ -253,7 +249,8 @@ export class MentorService {
       result = result.filter((r) => (r.progressArchive?.examTotal ?? 0) <= params.maxScore!);
     }
 
-    return { total, page, pageSize, items: result };
+    const total = result.length;
+    return { total, page, pageSize, items: result.slice((page - 1) * pageSize, page * pageSize) };
   }
 
   /** 异常预警列表(管辖范围内) */

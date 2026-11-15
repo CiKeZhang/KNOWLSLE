@@ -2,6 +2,9 @@
 
 const tabbar = require('../../utils/tabbar.js');
 
+// 与后端 student-scope.ts 一致:仅这两位院长(及管理员)可以看到全院学生
+const FULL_ACCESS_STAFF_NOS = ['683412', '512907'];
+
 Page({
   onTabTap(e) { tabbar.onTap.call(this, e); },
 
@@ -22,12 +25,15 @@ Page({
   onShow() {
     tabbar.refresh(this, 'students');
     const userInfo = getApp().globalData.userInfo || wx.getStorageSync('userInfo') || {};
+    const isAdmin = userInfo.role === 'ACADEMIC_ADMIN' || userInfo.role === 'SYS_ADMIN';
+    const isDean = FULL_ACCESS_STAFF_NOS.indexOf(String(userInfo.staffNo || userInfo.username || '')) >= 0;
     this.setData({
       page: 1,
       students: [],
       hasMore: true,
       loading: false,
-      canFilterMine: userInfo.role === 'MAJOR_MENTOR',
+      // 普通导师的可见范围本来就锁定为 mentorId=自己,「我的学生」开关对他没有意义
+      canFilterMine: isAdmin || isDean,
     });
     this.loadStudents();
   },
@@ -43,7 +49,8 @@ Page({
   },
 
   onSearch() {
-    this.setData({ page: 1, students: [], hasMore: true });
+    this._seq++;
+    this.setData({ page: 1, students: [], hasMore: true, loading: false });
     this.loadStudents();
   },
 
@@ -87,10 +94,13 @@ Page({
         mentorName: (u.mentor && u.mentor.name) || '',
         watched: watchedIds.has(u.id),
       }));
+      const merged = this.data.students.concat(list);
+      // 后端返回过滤后的真实 total;用「本页条数>=20」推断会因不足一页而提前截断
+      const total = typeof data.total === 'number' ? data.total : merged.length;
       this.setData({
-        students: this.data.students.concat(list),
+        students: merged,
         page: this.data.page + 1,
-        hasMore: list.length >= 20,
+        hasMore: merged.length < total && list.length > 0,
         loading: false,
       });
     }).catch(() => {
@@ -105,13 +115,14 @@ Page({
   toggleWatch(e) {
     const id = e.currentTarget.dataset.id;
     const watched = e.currentTarget.dataset.watched;
-    const url = watched ? `/mentor/watch/${id}` : `/mentor/watch/${id}`;
+    const url = `/mentor/watch/${id}`;
     const method = watched ? 'DELETE' : 'POST';
 
     getApp().request({ url, method, data: {} })
       .then(() => {
         wx.showToast({ title: watched ? '已取消关注' : '已关注', icon: 'success' });
-        this.setData({ page: 1, students: [], hasMore: true });
+        this._seq++;
+        this.setData({ page: 1, students: [], hasMore: true, loading: false });
         this.loadStudents();
       })
       .catch(() => {});

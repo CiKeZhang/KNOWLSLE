@@ -6,10 +6,8 @@
     <view class="alert-list">
       <view class="alert-card" wx:for="{{alerts}}" wx:key="id">
         <view class="alert-header">
-          <view class="alert-type">{{item.type || '异常'}}</view>
-          <view class="alert-status {{item.status === 'PENDING' ? 'pending' : 'resolved'}}">
-            {{item.status === 'PENDING' ? '待处理' : '已处理'}}
-          </view>
+          <view class="alert-type">{{item.typeLabel}}</view>
+          <view class="alert-status {{item.isPending ? 'pending' : 'resolved'}}">{{item.statusLabel}}</view>
         </view>
         <view class="alert-content">{{item.content || item.description}}</view>
         <view class="alert-student" wx:if="{{item.studentName}}">
@@ -20,7 +18,7 @@
         </view>
         <view
           class="handle-btn"
-          wx:if="{{item.status === 'PENDING'}}"
+          wx:if="{{item.isPending}}"
           data-id="{{item.id}}"
           bindtap="handleAlert"
         >

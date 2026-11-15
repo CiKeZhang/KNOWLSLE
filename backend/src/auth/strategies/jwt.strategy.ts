@@ -29,6 +29,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     role: string;
     actAs?: string;
   }): Promise<AuthUser> {
+    // 微信登录票据与访问令牌共用密钥,但没有 sub;必须先挡掉,避免被当成登录态使用
+    if (typeof payload.sub !== 'number') {
+      throw new UnauthorizedException('无效的登录凭证');
+    }
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {

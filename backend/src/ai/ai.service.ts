@@ -4,6 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { OperationLogService } from '../common/services/operation-log.service';
 import { AiRecommendInputDto } from './dto/ai.dto';
 import { SchoolTier } from '../common/enums';
+import { assertStudentVisible } from '../common/utils/student-scope';
+import { AuthUser } from '../common/decorators/current-user.decorator';
 
 export interface RecommendationItem {
   itemId: string;
@@ -164,10 +166,10 @@ export class AiService {
     });
   }
 
-  /** 导师:对推荐结果人工校准 */
+  /** 导师:对推荐结果人工校准(仅限管辖范围内的学生) */
   async mentorFeedback(
     recommendationId: number,
-    mentorId: number,
+    actor: AuthUser,
     itemId: string,
     comment: string,
   ) {
@@ -175,6 +177,8 @@ export class AiService {
       where: { id: recommendationId },
     });
     if (!rec) throw new BadRequestException('推荐记录不存在');
+    await assertStudentVisible(this.prisma, actor, rec.studentId);
+    const mentorId = actor.id;
     const fb = await this.prisma.aIRecommendationFeedback.create({
       data: { recommendationId, mentorId, itemId, comment },
     });

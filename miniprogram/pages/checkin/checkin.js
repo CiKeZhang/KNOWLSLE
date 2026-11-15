@@ -63,12 +63,19 @@ Page({
     editMode: false,
   },
 
-  onShow() {
+  async onShow() {
     tabbar.refresh(this, 'checkin');
     if (!getApp().checkLogin()) return;
+    // 恢复网络后自动补交断网时暂存的打卡
+    if (getApp().replayPendingCheckins) {
+      getApp().replayPendingCheckins().then((n) => {
+        if (n > 0) { this.loadCheckin(); this.loadHistory(); }
+      });
+    }
     this.loadCheckin();
-    this.loadHistory();
-    this.loadProgressArchive();
+    // 进度趋势依赖 history,须等历史返回后再算,否则只剩「当前」一个点
+    await this.loadHistory();
+    await this.loadProgressArchive();
   },
 
   onPullDownRefresh() {
@@ -233,6 +240,7 @@ Page({
   },
 
   async submit() {
+    if (this.data.submitting) return;
     const { stage, completedItems, difficulties } = this.data.form;
     if (!stage) {
       wx.showToast({ title: '请选择当前阶段', icon: 'none' });

@@ -11,7 +11,7 @@
       </view>
       <view class="stat-card">
         <view class="stat-num">{{stats.checkedInToday}}</view>
-        <view class="stat-label">今日打卡</view>
+        <view class="stat-label">本周打卡</view>
       </view>
       <view class="stat-card">
         <view class="stat-num">{{stats.checkinRate}}</view>

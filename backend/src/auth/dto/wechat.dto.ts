@@ -20,15 +20,15 @@ export class WechatPhoneDto {
 
 /** 第三步:补全身份信息,完成登录/注册 */
 export class WechatCompleteDto {
-  @ApiProperty({ description: '微信 openid(第一步返回)' })
+  @ApiProperty({ description: '第一步返回的一次性登录票据(10 分钟内有效)' })
   @IsString()
   @IsNotEmpty()
-  openid: string;
+  loginTicket: string;
 
-  @ApiProperty({ description: '手机号(第二步返回,可选)' })
+  @ApiProperty({ description: '第二步返回的手机号票据(可选)', required: false })
   @IsOptional()
   @IsString()
-  phone?: string;
+  phoneTicket?: string;
 
   @ApiProperty({ description: '真实姓名' })
   @IsString()

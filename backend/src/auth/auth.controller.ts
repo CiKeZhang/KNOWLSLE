@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Req, Headers } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -29,18 +29,20 @@ export class AuthController {
 
   @Public()
   @Post('wechat/login')
-  @ApiOperation({ summary: '微信小程序-第一步:wx.login 换取 openid' })
+  @ApiOperation({ summary: '微信小程序-第一步:wx.login 换取一次性登录票据' })
   async wechatLogin(@Body() dto: WechatLoginDto) {
-    // 只返回 openid,session_key 属于敏感信息,不返回前端
+    // openid 不再交给客户端:签发短时效票据,第三步由服务端校验后取回 openid,
+    // 避免客户端自传 openid 冒充任意账号(含院长)完成绑定登录。
     const result = await this.wechat.code2Session(dto.code);
-    return { openid: result.openid };
+    return { loginTicket: await this.wechat.issueLoginTicket(result.openid) };
   }
 
   @Public()
   @Post('wechat/phone')
-  @ApiOperation({ summary: '微信小程序-第二步:获取手机号' })
-  wechatPhone(@Body() dto: WechatPhoneDto) {
-    return this.wechat.getPhoneNumber(dto.code);
+  @ApiOperation({ summary: '微信小程序-第二步:获取手机号票据' })
+  async wechatPhone(@Body() dto: WechatPhoneDto) {
+    const phone = await this.wechat.getPhoneNumber(dto.code);
+    return { phoneTicket: await this.wechat.issuePhoneTicket(phone), phoneNumber: phone };
   }
 
   @Public()
@@ -60,8 +62,8 @@ export class AuthController {
   @Public()
   @Post('bootstrap-admin')
   @ApiOperation({ summary: '初始化系统首个管理员(仅当无管理员时可用,用于首次部署)' })
-  bootstrap(@Body() dto: BootstrapAdminDto) {
-    return this.auth.bootstrapAdmin(dto.username, dto.password, dto.name);
+  bootstrap(@Body() dto: BootstrapAdminDto, @Headers('x-bootstrap-token') token?: string) {
+    return this.auth.bootstrapAdmin(dto.username, dto.password, dto.name, token);
   }
 
   @UseGuards(JwtAuthGuard)

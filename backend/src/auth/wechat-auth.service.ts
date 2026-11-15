@@ -29,6 +29,41 @@ export class WechatAuthService {
     private readonly opLog: OperationLogService,
   ) {}
 
+  /** 票据与访问令牌共用密钥,但 payload 带 purpose,JwtStrategy 不会把票据当成登录态 */
+  private get ticketSecret(): string {
+    return this.config.get<string>('JWT_SECRET', 'please_change_jwt_secret_in_production');
+  }
+
+  /** 第一步:签发携带 openid 的一次性登录票据(10 分钟) */
+  async issueLoginTicket(openid: string): Promise<string> {
+    return this.jwt.signAsync(
+      { purpose: 'wechat_login_ticket', openid },
+      { secret: this.ticketSecret, expiresIn: '10m' },
+    );
+  }
+
+  /** 第二步:签发携带手机号的一次性票据(10 分钟) */
+  async issuePhoneTicket(phone: string): Promise<string> {
+    return this.jwt.signAsync(
+      { purpose: 'wechat_phone_ticket', phone },
+      { secret: this.ticketSecret, expiresIn: '10m' },
+    );
+  }
+
+  /** 校验票据:拒绝伪造、过期、用途不符 */
+  private async verifyTicket(ticket: string, purpose: string): Promise<any> {
+    let payload: any;
+    try {
+      payload = await this.jwt.verifyAsync(ticket, { secret: this.ticketSecret });
+    } catch {
+      throw new BadRequestException('登录凭证无效或已过期,请重新进行微信登录');
+    }
+    if (payload?.purpose !== purpose) {
+      throw new BadRequestException('登录凭证类型不匹配');
+    }
+    return payload;
+  }
+
   /** 第一步:用 wx.login code 换取 openid + session_key */
   async code2Session(code: string): Promise<{ openid: string; sessionKey: string; unionid?: string }> {
     const appId = this.config.get<string>('WECHAT_APPID');
@@ -101,8 +136,8 @@ export class WechatAuthService {
 
   /** 第三步:补全身份信息(学生:姓名+学号+专业 / 导师:姓名+工号),完成登录/注册,签发 JWT */
   async completeLogin(params: {
-    openid: string;
-    phone?: string;
+    loginTicket: string;
+    phoneTicket?: string;
     name: string;
     studentNo: string;
     identity?: 'student' | 'mentor';
@@ -110,7 +145,15 @@ export class WechatAuthService {
     nickname?: string;
     avatarUrl?: string;
   }): Promise<{ accessToken: string; user: any }> {
-    const { openid, phone, name, studentNo, nickname, avatarUrl } = params;
+    const login = await this.verifyTicket(params.loginTicket, 'wechat_login_ticket');
+    const openid = String(login.openid ?? '');
+    if (!openid) throw new BadRequestException('登录凭证缺少身份信息,请重新登录');
+    let phone: string | undefined;
+    if (params.phoneTicket) {
+      const phonePayload = await this.verifyTicket(params.phoneTicket, 'wechat_phone_ticket');
+      phone = phonePayload.phone ? String(phonePayload.phone) : undefined;
+    }
+    const { name, studentNo, nickname, avatarUrl } = params;
     const identity = params.identity ?? 'student';
 
     // 校验
@@ -249,7 +292,8 @@ export class WechatAuthService {
       throw new BadRequestException('该工号已绑定其他微信账号,请联系管理员');
     }
     if (name.trim() !== mentor.name) {
-      throw new BadRequestException(`姓名与工号不匹配(应为:${mentor.name})`);
+      // 不回显正确姓名,避免被用作工号→姓名的枚举接口
+      throw new BadRequestException('姓名与工号不匹配,请联系学院管理员');
     }
 
     const user = await this.prisma.user.update({

@@ -57,10 +57,10 @@ export class HelpController {
   @Get('applications/:id')
   @ApiOperation({ summary: '查看帮扶申请详情' })
   detail(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
-    // 学生只能看自己的;导师/管理员可看全部
+    // 学生只能看自己的;导师/管理员也只能看自己管辖范围内的学生
     if (user.role === UserRole.STUDENT) {
       return this.help.detail(id, user.id);
     }
-    return this.help.detail(id);
+    return this.help.detail(id, user);
   }
 }

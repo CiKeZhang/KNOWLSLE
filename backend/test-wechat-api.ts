@@ -136,16 +136,16 @@ async function run() {
 
   console.log('\n========== 微信登录 HTTP 接口测试 ==========\n');
 
-  // 接口1: /auth/wechat/login
+  // 接口1: /auth/wechat/login —— 只返回服务端签发的一次性票据,不再暴露 openid
   console.log('【接口1】POST /auth/wechat/login');
   const res1 = await request(app.getHttpServer())
     .post('/auth/wechat/login')
     .send({ code: 'wx_login_code_123' });
   assert('HTTP 200/201', res1.status === 200 || res1.status === 201, `got ${res1.status}`);
-  assert('返回 openid', res1.body?.data?.openid === 'oMOCK_OPENID_123', `got ${res1.body?.data?.openid}`);
-  assert('返回 sessionKey', !!res1.body?.data?.sessionKey);
-  const openid = res1.body?.data?.openid;
-  console.log(`    openid: ${openid}`);
+  assert('返回 loginTicket', !!res1.body?.data?.loginTicket);
+  assert('不再暴露 openid', res1.body?.data?.openid === undefined);
+  const loginTicket = res1.body?.data?.loginTicket;
+  console.log(`    loginTicket: ${String(loginTicket).slice(0, 30)}...`);
 
   // 接口1 异常:缺少 code
   console.log('\n【接口1异常】缺少 code 参数');
@@ -158,16 +158,18 @@ async function run() {
     .post('/auth/wechat/phone')
     .send({ code: 'phone_code_456' });
   assert('HTTP 200/201', res2.status === 200 || res2.status === 201, `got ${res2.status}`);
-  assert('返回手机号', res2.body?.data === '13812345678', `got ${JSON.stringify(res2.body?.data)}`);
-  console.log(`    phone: ${res2.body?.data}`);
+  assert('返回手机号票据', !!res2.body?.data?.phoneTicket);
+  assert('返回手机号', res2.body?.data?.phoneNumber === '13812345678', `got ${JSON.stringify(res2.body?.data)}`);
+  const phoneTicket = res2.body?.data?.phoneTicket;
+  console.log(`    phone: ${res2.body?.data?.phoneNumber}`);
 
   // 接口3: /auth/wechat/complete
   console.log('\n【接口3】POST /auth/wechat/complete');
   const res3 = await request(app.getHttpServer())
     .post('/auth/wechat/complete')
     .send({
-      openid,
-      phone: '13812345678',
+      loginTicket,
+      phoneTicket,
       name: '李同学',
       studentNo: '202203045',
       nickname: '微信昵称',
@@ -184,15 +186,29 @@ async function run() {
   console.log('\n【接口3异常】空姓名');
   const res3b = await request(app.getHttpServer())
     .post('/auth/wechat/complete')
-    .send({ openid, name: '', studentNo: '123' });
+    .send({ loginTicket, name: '', studentNo: '123' });
   assert('空姓名返回 400', res3b.status === 400, `got ${res3b.status}`);
 
   // 接口3 异常:空学号
   console.log('\n【接口3异常】空学号');
   const res3c = await request(app.getHttpServer())
     .post('/auth/wechat/complete')
-    .send({ openid, name: '王同学', studentNo: '' });
+    .send({ loginTicket, name: '王同学', studentNo: '' });
   assert('空学号返回 400', res3c.status === 400, `got ${res3c.status}`);
+
+  // 接口3 异常:旧漏洞路径(客户端自传 openid)必须被拒绝
+  console.log('\n【接口3异常】自传 openid');
+  const res3d = await request(app.getHttpServer())
+    .post('/auth/wechat/complete')
+    .send({ openid: 'oMOCK_OPENID_123', name: '李同学', studentNo: '202203046' });
+  assert('自传 openid 返回 400', res3d.status === 400, `got ${res3d.status}`);
+
+  // 接口3 异常:伪造票据
+  console.log('\n【接口3异常】伪造票据');
+  const res3e = await request(app.getHttpServer())
+    .post('/auth/wechat/complete')
+    .send({ loginTicket: 'forged.ticket.value', name: '李同学', studentNo: '202203047' });
+  assert('伪造票据返回 400', res3e.status === 400, `got ${res3e.status}`);
 
   // 用返回的 token 访问受保护接口
   console.log('\n【JWT鉴权】使用返回的 token 访问 /auth/profile');

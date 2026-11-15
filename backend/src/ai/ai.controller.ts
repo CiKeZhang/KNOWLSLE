@@ -46,7 +46,7 @@ export class AiController {
     @CurrentUser() user: AuthUser,
     @Body() dto: MentorFeedbackDto,
   ) {
-    return this.ai.mentorFeedback(id, user.id, dto.itemId, dto.comment);
+    return this.ai.mentorFeedback(id, user, dto.itemId, dto.comment);
   }
 
   // ============ AI 择校 Agent 对话 ============

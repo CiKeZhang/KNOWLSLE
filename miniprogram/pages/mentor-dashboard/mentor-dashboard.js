@@ -2,6 +2,10 @@
 
 const tabbar = require('../../utils/tabbar.js');
 
+// 后端新建帮扶/预警的初始状态是 OPEN,历史数据可能是 PENDING;旧版只查 PENDING 导致计数恒为 0
+const PENDING_STATUS = ['OPEN', 'PENDING'];
+const isPending = (x) => PENDING_STATUS.indexOf(x && x.status) >= 0;
+
 Page({
   onTabTap(e) { tabbar.onTap.call(this, e); },
   data: {
@@ -26,8 +30,8 @@ Page({
     this.setData({ loading: true });
     Promise.all([
       getApp().request({ url: '/mentor/dashboard' }).catch(() => null),
-      getApp().request({ url: '/mentor/alerts?status=PENDING' }).catch(() => []),
-      getApp().request({ url: '/mentor/help-applications?status=PENDING' }).catch(() => []),
+      getApp().request({ url: '/mentor/alerts' }).catch(() => []),
+      getApp().request({ url: '/mentor/help-applications' }).catch(() => []),
     ]).then(([data, alerts, helpApps]) => {
       if (!data) { this.setData({ loading: false }); return; }
 
@@ -59,10 +63,11 @@ Page({
       this.setData({
         stats: {
           totalStudents: total,
+          // 后端按 weekStart 统计本周,不是「今日」,标签同步改为本周
           checkedInToday: weekChecked,
           checkinRate: (data.checkinRate || 0) + '%',
-          alerts: Array.isArray(alerts) ? alerts.length : 0,
-          pendingHelp: Array.isArray(helpApps) ? helpApps.length : 0,
+          alerts: Array.isArray(alerts) ? alerts.filter(isPending).length : 0,
+          pendingHelp: Array.isArray(helpApps) ? helpApps.filter(isPending).length : 0,
         },
         stageDistribution,
         majorStats,

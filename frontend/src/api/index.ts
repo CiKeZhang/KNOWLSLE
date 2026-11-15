@@ -60,8 +60,13 @@ export const AuthApi = {
   profile: () => http.get('/auth/profile'),
   changePassword: (oldPassword: string, newPassword: string) =>
     http.post('/auth/change-password', { oldPassword, newPassword }),
-  bootstrapAdmin: (username: string, password: string, name: string) =>
-    http.post('/auth/bootstrap-admin', { username, password, name }),
+  // 后端要求 x-bootstrap-token(部署期运维口令),未传会被拒绝
+  bootstrapAdmin: (username: string, password: string, name: string, bootstrapToken?: string) =>
+    http.post(
+      '/auth/bootstrap-admin',
+      { username, password, name },
+      bootstrapToken ? { headers: { 'x-bootstrap-token': bootstrapToken } } : undefined,
+    ),
 };
 
 export const CheckInApi = {

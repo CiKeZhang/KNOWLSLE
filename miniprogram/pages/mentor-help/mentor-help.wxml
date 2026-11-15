@@ -6,10 +6,8 @@
     <view class="help-list">
       <view class="help-card" wx:for="{{applications}}" wx:key="id">
         <view class="help-header">
-          <view class="help-type">{{item.type}}</view>
-          <view class="help-status {{item.status}}">
-            {{item.status === 'PENDING' ? '待处理' : item.status === 'IN_PROGRESS' ? '进行中' : '已解决'}}
-          </view>
+          <view class="help-type">{{item.typeLabel}}</view>
+          <view class="help-status {{item.status}}">{{item.statusLabel}}</view>
         </view>
         <view class="help-student" wx:if="{{item.studentName}}">申请人: {{item.studentName}}</view>
         <view class="help-content">{{item.content || item.description}}</view>
@@ -18,7 +16,7 @@
         <view class="help-actions">
           <view
             class="action-btn assign"
-            wx:if="{{item.status === 'PENDING'}}"
+            wx:if="{{item.canAssign}}"
             data-id="{{item.id}}"
             bindtap="assignHelp"
           >
@@ -26,7 +24,7 @@
           </view>
           <view
             class="action-btn record"
-            wx:if="{{item.status === 'IN_PROGRESS'}}"
+            wx:if="{{item.canRecord}}"
             data-id="{{item.id}}"
             bindtap="openRecordModal"
           >

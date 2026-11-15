@@ -3,7 +3,9 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
+import { timingSafeEqual } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -159,8 +161,24 @@ export class AuthService {
     return rest;
   }
 
-  /** 初始化首个管理员(若系统中无任何 SYS_ADMIN 则允许) */
-  async bootstrapAdmin(username: string, password: string, name: string) {
+  /**
+   * 初始化首个管理员(部署期一次性操作)。
+   * 必须携带 x-bootstrap-token:取 BOOTSTRAP_ADMIN_TOKEN,或复用运维已有的 DB_TRANSFER_SECRET。
+   * 两者都未配置时接口永久关闭,避免线上库因「无 SYS_ADMIN」而长期可被匿名创建最高管理员。
+   */
+  async bootstrapAdmin(username: string, password: string, name: string, token?: string) {
+    const allowed = [
+      this.config.get<string>('BOOTSTRAP_ADMIN_TOKEN'),
+      this.config.get<string>('DB_TRANSFER_SECRET'),
+    ].filter((v): v is string => !!v);
+    const granted = !!token && allowed.some((secret) => {
+      const a = Buffer.from(token);
+      const b = Buffer.from(secret);
+      return a.length === b.length && timingSafeEqual(a, b);
+    });
+    if (!granted) {
+      throw new ForbiddenException('未授权的管理员初始化(需 x-bootstrap-token)');
+    }
     const exists = await this.prisma.user.findFirst({
       where: { role: UserRole.SYS_ADMIN },
     });

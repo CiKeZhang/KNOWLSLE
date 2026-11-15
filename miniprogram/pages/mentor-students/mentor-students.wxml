@@ -44,7 +44,11 @@
     </view>
   </view>
 
-  <view class="empty" wx:if="{{!loading && students.length === 0}}">暂无学生数据</view>
+  <view class="empty" wx:if="{{!loading && students.length === 0}}">
+    <view>暂无学生数据</view>
+    <view style="font-size:24rpx;color:#888;margin-top:16rpx;line-height:1.6;">学生需先在小程序「选择导师」中选定你，才会出现在这里。</view>
+    <view style="margin-top:24rpx;padding:12rpx 40rpx;border:1rpx solid #ccc;border-radius:8rpx;display:inline-block;" bindtap="onSearch">刷新</view>
+  </view>
   <view class="loading-more" wx:if="{{loading && students.length > 0}}">加载中...</view>
   <view class="no-more" wx:if="{{!hasMore && students.length > 0}}">没有更多了</view>
 <view class="app-tab-bar">

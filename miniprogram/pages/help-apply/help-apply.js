@@ -24,6 +24,7 @@ Page({
   },
 
   async submit() {
+    if (this.data.submitting) return;
     if (!this.data.form.type) {
       wx.showToast({ title: '请选择帮扶类型', icon: 'none' });
       return;

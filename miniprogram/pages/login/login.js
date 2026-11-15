@@ -26,10 +26,11 @@ function doTestLogin(account, asMentor) {
 Page({
   data: {
     step: 1,
-    openid: '',
+    // 第一步/第二步由服务端签发的一次性票据,不再把 openid 和手机号明文交给前端
+    loginTicket: '',
     nickname: '',
     avatarUrl: '',
-    phone: '',
+    phoneTicket: '',
     identity: 'student', // student 学生 / mentor 导师
     majors: config.majors,
     majorIndex: -1,
@@ -134,7 +135,7 @@ Page({
           wx.hideLoading();
           // 设置默认昵称头像(新版微信不再直接获取用户信息)
           that.setData({
-            openid: data.openid,
+            loginTicket: data.loginTicket,
             nickname: '考研同学',
             avatarUrl: '',
             step: 2,
@@ -166,9 +167,9 @@ Page({
       url: '/auth/wechat/phone',
       method: 'POST',
       data: { code: e.detail.code },
-    }).then((phone) => {
+    }).then((res) => {
       wx.hideLoading();
-      that.setData({ phone, step: 3 });
+      that.setData({ phoneTicket: res.phoneTicket, step: 3 });
     }).catch(() => {
       wx.hideLoading();
       that.setData({ step: 3 });
@@ -190,6 +191,12 @@ Page({
 
   // 第三步:补全信息,完成登录
   onComplete() {
+    if (this.data.submitting) return;
+    if (!this.data.loginTicket) {
+      wx.showToast({ title: '登录凭证已失效,请重新微信登录', icon: 'none' });
+      this.setData({ step: 1 });
+      return;
+    }
     const { name, studentNo } = this.data.form;
     const { identity, majors, majorIndex, agreedPrivacy } = this.data;
     if (!agreedPrivacy) {
@@ -217,8 +224,8 @@ Page({
     const that = this;
 
     const payload = {
-      openid: this.data.openid,
-      phone: this.data.phone,
+      loginTicket: this.data.loginTicket,
+      phoneTicket: this.data.phoneTicket || undefined,
       name: name.trim(),
       studentNo: studentNo.trim(),
       identity,
