@@ -130,7 +130,7 @@ const trendOption = computed(() => {
 
 async function load() {
   try {
-    const [s, m] = await Promise.all([
+    const [s, m]: any[] = await Promise.all([
       CheckInApi.mentorStats(filter),
       CheckInApi.mentorMissing(filter),
     ]);

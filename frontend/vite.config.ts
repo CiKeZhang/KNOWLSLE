@@ -6,6 +6,8 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
 import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
+  // 静态托管可能挂在任意子路径下,用相对路径保证资源可加载
+  base: './',
   plugins: [
     vue(),
     AutoImport({ resolvers: [ElementPlusResolver()] }),

@@ -1,6 +1,12 @@
 <template>
   <el-container class="main-layout">
-    <el-aside :width="collapsed ? '64px' : '220px'" class="sidebar">
+    <!-- 窄屏抽屉遮罩:点空白处收起菜单 -->
+    <div v-if="drawerOpen" class="drawer-mask" @click="drawerOpen = false" />
+    <el-aside
+      :width="isNarrow ? '220px' : (collapsed ? '64px' : '220px')"
+      class="sidebar"
+      :class="{ 'drawer-open': drawerOpen }"
+    >
       <div class="logo">
         <span v-if="!collapsed">考研进度管控系统</span>
         <span v-else>考研</span>
@@ -40,7 +46,11 @@
     <el-container>
       <el-header class="topbar">
         <div class="topbar-left">
-          <el-icon class="collapse-btn" @click="collapsed = !collapsed">
+          <!-- 窄屏用汉堡按钮唤出侧边栏抽屉 -->
+          <el-icon v-if="isNarrow" class="collapse-btn" @click="drawerOpen = !drawerOpen">
+            <Menu />
+          </el-icon>
+          <el-icon v-else class="collapse-btn" @click="collapsed = !collapsed">
             <Fold v-if="!collapsed" />
             <Expand v-else />
           </el-icon>
@@ -79,9 +89,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessageBox } from 'element-plus';
+import { Menu } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth';
 import { NotificationsApi } from '@/api';
 import PasswordDialog from '@/components/PasswordDialog.vue';
@@ -92,6 +103,13 @@ const route = useRoute();
 const collapsed = ref(false);
 const pwdVisible = ref(false);
 const unreadCount = ref(0);
+// 窄屏(手机)下侧边栏默认收起,点击汉堡按钮以抽屉形式滑出
+const isNarrow = ref(typeof window !== 'undefined' && window.innerWidth <= 768);
+const drawerOpen = ref(false);
+function onResize() {
+  isNarrow.value = window.innerWidth <= 768;
+  if (!isNarrow.value) drawerOpen.value = false;
+}
 
 const roleLabel = computed(() => {
   const m: Record<string, string> = {
@@ -104,9 +122,8 @@ const roleLabel = computed(() => {
   return m[auth.role] || auth.role;
 });
 
-const notificationPath = computed(() =>
-  auth.isStudent ? '/student/notifications' : '/mentor/dashboard',
-);
+// 铃铛对所有角色统一进消息中心(导师此前会跳到看板,看不到通知)
+const notificationPath = '/student/notifications';
 
 const activeMenu = computed(() => route.path);
 
@@ -115,6 +132,7 @@ const menuItems = computed(() => {
   if (auth.isStudent) {
     return [
       { path: '/student/dashboard', title: '考研首页', icon: 'HomeFilled' },
+      { path: '/student/mentor-select', title: '我的导师', icon: 'User' },
       { path: '/student/checkin', title: '本周打卡', icon: 'EditPen' },
       { path: '/student/archive', title: '我的档案', icon: 'Document' },
       { path: '/student/ai', title: 'AI 择校', icon: 'MagicStick' },
@@ -133,6 +151,7 @@ const menuItems = computed(() => {
       { path: '/mentor/makeup', title: '补卡审批', icon: 'DocumentChecked' },
       { path: '/mentor/help', title: '帮扶管理', icon: 'ChatLineRound' },
       { path: '/mentor/reports', title: '报表导出', icon: 'Download' },
+      { path: '/student/notifications', title: '我的消息', icon: 'Bell' },
     ];
   }
   // 管理员
@@ -141,6 +160,7 @@ const menuItems = computed(() => {
     { path: '/mentor/checkin-stats', title: '打卡统计', icon: 'Calendar' },
     { path: '/mentor/students', title: '学生列表', icon: 'UserFilled' },
     { path: '/mentor/alerts', title: '异常预警', icon: 'Warning' },
+    { path: '/student/notifications', title: '我的消息', icon: 'Bell' },
     {
       path: 'admin',
       title: '后台管理',
@@ -160,6 +180,7 @@ const menuItems = computed(() => {
 });
 
 function handleSelect(path: string) {
+  drawerOpen.value = false; // 手机端点完菜单自动收起抽屉
   router.push(path);
 }
 
@@ -190,17 +211,38 @@ async function loadUnread() {
 
 onMounted(() => {
   loadUnread();
+  window.addEventListener('resize', onResize);
   // 每 60 秒刷新一次未读数
   setInterval(loadUnread, 60000);
 });
+onUnmounted(() => window.removeEventListener('resize', onResize));
 </script>
 
 <style scoped>
-.main-layout { height: 100vh; }
+.main-layout { height: 100vh; position: relative; }
 .sidebar {
   background-color: #001529;
-  transition: width 0.2s;
+  transition: width 0.2s, transform 0.25s;
   overflow-x: hidden;
+}
+.drawer-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1900;
+}
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2000;
+    transform: translateX(-100%);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+  }
+  .sidebar.drawer-open { transform: translateX(0); }
+  .main-layout > .el-container { width: 100% !important; }
 }
 .logo {
   height: 60px;

@@ -70,7 +70,8 @@
             <el-option label="教学管理员" value="ACADEMIC_ADMIN" />
           </el-select>
         </el-form-item>
-        <el-form-item label="学号/工号"><el-input v-model="form.studentNo || form.staffNo" /></el-form-item>
+        <el-form-item v-if="form.role === 'STUDENT'" label="学号"><el-input v-model="form.studentNo" /></el-form-item>
+        <el-form-item v-else label="工号"><el-input v-model="form.staffNo" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="form.phone" /></el-form-item>
         <el-form-item label="邮箱"><el-input v-model="form.email" /></el-form-item>
         <el-form-item label="院系">

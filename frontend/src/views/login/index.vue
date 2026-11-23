@@ -37,7 +37,7 @@
             >登 录</el-button>
           </el-form>
         </el-tab-pane>
-        <el-tab-pane label="首次部署初始化" name="bootstrap">
+        <el-tab-pane v-if="showBootstrap" label="首次部署初始化" name="bootstrap">
           <el-alert
             title="仅当系统中无任何管理员时可用。初始化后请立即登录修改。"
             type="warning"
@@ -108,6 +108,8 @@ const bootRules = {
 };
 
 const showDemo = ref(import.meta.env.DEV ?? false);
+// 公网测试版不暴露「初始化管理员」入口(库里已有管理员,且该接口需运维口令)
+const showBootstrap = ref(import.meta.env.DEV ?? false);
 const demoAccounts = [
   { role: '管理员', username: 'admin', password: 'admin@2026' },
   { role: '教学管理员', username: 'academic', password: 'academic@2026' },

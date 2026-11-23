@@ -2,8 +2,14 @@ import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from '
 import { ElMessage } from 'element-plus';
 import router from '@/router';
 
+// 网页版作为静态站点发布,需直连云托管后端(后端已开启 CORS)。
+// 本地联调可在 .env.local 里设置 VITE_API_BASE_URL=http://127.0.0.1:<port>/api
+const API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+  'https://kyglbackend-340016-9-1523482926.sh.run.tcloudbase.com/api';
+
 const http: AxiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 30000,
 });
 
@@ -124,6 +130,13 @@ export const MentorApi = {
   recordHelp: (id: number, data: any) =>
     http.post(`/mentor/help-applications/${id}/record`, data),
   batchNotify: (data: any) => http.post('/mentor/batch-notify', data),
+};
+
+// 学生端: 自选指导老师(仅 STUDENT 角色可调用)
+export const MentorSelectionApi = {
+  options: () => http.get('/mentor/options'),
+  myMentor: () => http.get('/mentor/my-mentor'),
+  select: (mentorId: number) => http.post('/mentor/select', { mentorId }),
 };
 
 export const HelpApi = {

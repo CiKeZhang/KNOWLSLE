@@ -60,4 +60,23 @@ a {
 @media (max-width: 768px) {
   .el-main { padding: 8px !important; }
   .kygl-page { padding: 8px; }
+  /* 固定列宽的表格改为横向滚动,避免手机端被压成一条 */
+  .kygl-card .el-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .kygl-card .el-table__header-wrapper,
+  .kygl-card .el-table__body-wrapper {
+    overflow: visible;
+  }
+  .el-table__body-wrapper .el-scrollbar__wrap { overflow-x: auto; }
+  /* 行内筛选表单自动换行 */
+  .el-form--inline .el-form-item {
+    margin-right: 8px !important;
+    margin-bottom: 8px !important;
+  }
+  .el-descriptions { display: block; overflow-x: auto; }
+  .el-card__header { padding: 12px 16px; }
+  .stat-value { font-size: 22px; }
 }

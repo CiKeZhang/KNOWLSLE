@@ -123,7 +123,7 @@ const profile = ref<any>({});
 const weekStatus = ref<any>({});
 const history = ref<any>({ streak: 0, calendar: [] });
 const archive = ref<any>({});
-const keyNodes = ref<any[]>([]]);
+const keyNodes = ref<any[]>([]);
 
 const shortcuts = [
   { path: '/student/checkin', title: '本周打卡', icon: 'EditPen', color: '#2a7ae0' },

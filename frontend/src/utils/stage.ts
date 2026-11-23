@@ -1,5 +1,5 @@
 // 考研阶段标签工具
-import type { ETagProps } from 'element-plus';
+import type { TagProps } from 'element-plus';
 
 export const STAGE_LIST = [
   { value: 'NOT_STARTED', label: '未开始备考' },
@@ -20,11 +20,11 @@ export function stageLabel(stage?: string): string {
   return STAGE_MAP[stage] ?? stage;
 }
 
-export function stageTagType(stage?: string): ETagProps['type'] {
-  const m: Record<string, ETagProps['type']> = {
+export function stageTagType(stage?: string): TagProps['type'] {
+  const m: Record<string, TagProps['type']> = {
     NOT_STARTED: 'info',
     CHOOSING: 'warning',
-    BASIC: '',
+    BASIC: 'primary',
     STRENGTHENING: 'success',
     SPRINT: 'danger',
     EXAM_DONE: 'info',
@@ -89,7 +89,7 @@ export function alertTypeLabel(type?: string): string {
 }
 
 // 打卡状态标签
-export const CHECKIN_STATUS_MAP: Record<string, { label: string; type: ETagProps['type'] }> = {
+export const CHECKIN_STATUS_MAP: Record<string, { label: string; type: TagProps['type'] }> = {
   ON_TIME: { label: '按时完成', type: 'success' },
   LATE: { label: '逾期后补', type: 'warning' },
   MISSING: { label: '未打卡', type: 'danger' },
@@ -99,6 +99,6 @@ export function checkinStatusLabel(status?: string): string {
   return CHECKIN_STATUS_MAP[status || '']?.label ?? status ?? '';
 }
 
-export function checkinStatusTagType(status?: string): ETagProps['type'] {
+export function checkinStatusTagType(status?: string): TagProps['type'] {
   return CHECKIN_STATUS_MAP[status || '']?.type ?? 'info';
 }
