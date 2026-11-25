@@ -1,9 +1,6 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 
-// 学生首次登录会被引导到这一页自选导师(与小程序一致)
-export const MENTOR_SELECT_PATH = '/student/mentor-select';
-
 const routes: RouteRecordRaw[] = [
   {
     path: '/login',
@@ -28,9 +25,10 @@ const routes: RouteRecordRaw[] = [
         meta: { roles: ['STUDENT'], title: '考研首页' },
       },
       {
+        // 只读展示学院预分配的导师;学生端已取消自选/更换功能
         path: 'student/mentor-select',
         component: () => import('@/views/student/MentorSelect.vue'),
-        meta: { roles: ['STUDENT'], title: '选择指导老师' },
+        meta: { roles: ['STUDENT'], title: '我的指导老师' },
       },
       {
         path: 'student/checkin',
@@ -181,17 +179,7 @@ router.beforeEach(async (to) => {
     return { path: '/' };
   }
 
-  // 全自选模式: 学生未选导师时先引导一次; 页面内可选择,也可暂时跳过
-  // 注意: 不在这里 await 接口,否则接口慢/超时会把用户卡在登录页,表现为"登录成功但不跳转"
-  if (auth.isStudent && to.path !== MENTOR_SELECT_PATH) {
-    if (sessionStorage.getItem('kygl_skip_mentor') !== '1') {
-      auth.ensureMentorSelected().then((hasMentor) => {
-        if (!hasMentor && router.currentRoute.value.path === to.path) {
-          router.replace({ path: MENTOR_SELECT_PATH, query: { redirect: to.fullPath } });
-        }
-      });
-    }
-  }
+  // 导师由学院统一预分配,不再做学生自选/登录引导
   return true;
 });
 

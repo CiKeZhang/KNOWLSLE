@@ -150,7 +150,7 @@ const menuItems = computed(() => {
   if (auth.isStudent) {
     return [
       { path: '/student/dashboard', title: '考研首页', icon: 'HomeFilled' },
-      { path: '/student/mentor-select', title: '我的导师', icon: 'User' },
+      { path: '/student/mentor-select', title: '我的指导老师', icon: 'User' },
       { path: '/student/checkin', title: '本周打卡', icon: 'EditPen' },
       { path: '/student/archive', title: '我的档案', icon: 'Document' },
       { path: '/student/ai', title: 'AI 择校', icon: 'MagicStick' },

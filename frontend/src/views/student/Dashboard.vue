@@ -39,7 +39,7 @@
       </div>
     </el-card>
 
-    <!-- 我的导师 / 选导师引导 -->
+    <!-- 学院统一预分配的指导老师(只读) -->
     <el-card v-if="!mentorLoading" class="kygl-card mentor-card" :class="{ 'mentor-missing': !myMentor }">
       <div class="mentor-row">
         <div class="mentor-info">
@@ -53,13 +53,13 @@
           <template v-else>
             <div class="mentor-avatar warn"><el-icon :size="22"><Warning /></el-icon></div>
             <div>
-              <div class="mentor-label">还未选择指导老师</div>
-              <div class="mentor-name hint">选择导师后，导师就能看到你的进度并给予指导</div>
+              <div class="mentor-label">指导老师待分配</div>
+              <div class="mentor-name hint">学院正在统一分配，如有疑问请联系教学管理员</div>
             </div>
           </template>
         </div>
-        <el-button :type="myMentor ? 'default' : 'primary'" @click="$router.push('/student/mentor-select')">
-          {{ myMentor ? '更换导师' : '立即选择' }}
+        <el-button v-if="myMentor" type="default" @click="$router.push('/student/mentor-select')">
+          查看详情
         </el-button>
       </div>
     </el-card>
