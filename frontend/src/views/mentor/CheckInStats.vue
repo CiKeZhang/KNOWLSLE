@@ -33,14 +33,30 @@
         </el-card>
       </el-col>
       <el-col :xs="12" :sm="6">
-        <el-card class="stat-card">
-          <div class="stat-label">本周已打卡</div>
+        <el-card
+          class="stat-card clickable"
+          :class="{ active: listTab === 'checked' }"
+          role="button"
+          tabindex="0"
+          aria-label="查看本周已打卡学生列表"
+          @click="showList('checked')"
+          @keyup.enter="showList('checked')"
+        >
+          <div class="stat-label">本周已打卡 <span class="stat-hint">点击查看名单</span></div>
           <div class="stat-value success">{{ stats.checkedIn }}</div>
         </el-card>
       </el-col>
       <el-col :xs="12" :sm="6">
-        <el-card class="stat-card">
-          <div class="stat-label">本周未打卡</div>
+        <el-card
+          class="stat-card clickable"
+          :class="{ active: listTab === 'missing' }"
+          role="button"
+          tabindex="0"
+          aria-label="查看本周未打卡学生列表"
+          @click="showList('missing')"
+          @keyup.enter="showList('missing')"
+        >
+          <div class="stat-label">本周未打卡 <span class="stat-hint">点击查看名单</span></div>
           <div class="stat-value danger">{{ stats.missing }}</div>
         </el-card>
       </el-col>
@@ -58,17 +74,39 @@
       <el-empty v-else description="测试期暂无趋势数据，积累打卡记录后自动生成" :image-size="70" />
     </el-card>
 
-    <el-card class="kygl-card">
-      <template #header><span class="card-title">本周未打卡学生</span></template>
-      <el-table :data="missing" stripe>
-        <el-table-column prop="name" label="姓名" width="100" />
-        <el-table-column prop="username" label="学号" width="120" />
-        <el-table-column prop="class.name" label="班级" width="140" />
-        <el-table-column prop="major.name" label="专业" width="140" />
-        <el-table-column prop="phone" label="手机号" />
-      </el-table>
-      <el-empty v-if="missing.length === 0" description="本周暂无未打卡学生（尚无打卡记录时也会显示为空）" :image-size="70" />
-    </el-card>
+    <div ref="listSection">
+      <el-card class="kygl-card">
+        <el-tabs v-model="listTab" class="checkin-list-tabs">
+          <el-tab-pane label="本周未打卡学生" name="missing">
+            <el-table :data="missing" stripe>
+              <el-table-column prop="name" label="姓名" width="100" />
+              <el-table-column prop="username" label="学号" width="120" />
+              <el-table-column prop="class.name" label="班级" width="140" />
+              <el-table-column prop="major.name" label="专业" width="140" />
+              <el-table-column prop="phone" label="手机号" />
+            </el-table>
+            <el-empty v-if="missing.length === 0" description="本周暂无未打卡学生（尚无打卡记录时也会显示为空）" :image-size="70" />
+          </el-tab-pane>
+          <el-tab-pane label="本周已打卡学生" name="checked">
+            <el-table :data="checkedIn" stripe>
+              <el-table-column prop="name" label="姓名" width="100" />
+              <el-table-column prop="username" label="学号" width="120" />
+              <el-table-column prop="class.name" label="班级" width="140" />
+              <el-table-column prop="major.name" label="专业" width="140" />
+              <el-table-column label="打卡状态" width="110">
+                <template #default="{ row }">
+                  <el-tag v-if="row.thisWeekCheckin === 'ON_TIME'" type="success" size="small" effect="light">按时打卡</el-tag>
+                  <el-tag v-else-if="row.thisWeekCheckin === 'LATE'" type="warning" size="small" effect="light">逾期补卡</el-tag>
+                  <span v-else>—</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="phone" label="手机号" />
+            </el-table>
+            <el-empty v-if="checkedIn.length === 0" description="本周暂无已打卡学生" :image-size="70" />
+          </el-tab-pane>
+        </el-tabs>
+      </el-card>
+    </div>
 
     <!-- 批量提醒对话框 -->
     <el-dialog v-model="notifyDialog" title="批量发送提醒" width="500px">
@@ -89,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
 import VChart from 'vue-echarts';
 import { use } from 'echarts/core';
@@ -104,6 +142,9 @@ use([BarChart, LineChart, GridComponent, TooltipComponent, LegendComponent, Canv
 const auth = useAuthStore();
 const stats = ref<any>({ trend: [], totalStudents: 0, checkedIn: 0, missing: 0, streakCount: 0, rate: 0 });
 const missing = ref<any[]>([]);
+const checkedIn = ref<any[]>([]);
+const listTab = ref<'missing' | 'checked'>('missing');
+const listSection = ref<HTMLElement | null>(null);
 const classes = ref<any[]>([]);
 const majors = ref<any[]>([]);
 const filter = reactive({ classId: undefined as number | undefined, majorId: undefined as number | undefined });
@@ -128,17 +169,39 @@ const trendOption = computed(() => {
   };
 });
 
+async function loadStudents() {
+  const first: any = await MentorApi.students({ ...filter, page: 1, pageSize: 100 });
+  const all: any[] = [...(first.items || [])];
+  const total = first.total ?? all.length;
+  for (let page = 2; all.length < total && page <= 20; page++) {
+    const more: any = await MentorApi.students({ ...filter, page, pageSize: 100 });
+    if (!more.items?.length) break;
+    all.push(...more.items);
+  }
+  return all;
+}
+
 async function load() {
   try {
-    const [s, m]: any[] = await Promise.all([
+    const [s, students]: any[] = await Promise.all([
       CheckInApi.mentorStats(filter),
-      CheckInApi.mentorMissing(filter),
+      loadStudents(),
     ]);
     stats.value = s;
-    missing.value = m;
+    checkedIn.value = students.filter((item: any) =>
+      ['ON_TIME', 'LATE'].includes(item.thisWeekCheckin),
+    );
+    missing.value = students.filter(
+      (item: any) => !['ON_TIME', 'LATE'].includes(item.thisWeekCheckin),
+    );
   } catch {
     /* 已提示 */
   }
+}
+
+function showList(tab: 'missing' | 'checked') {
+  listTab.value = tab;
+  nextTick(() => listSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 }
 
 function goBatchRemind() {
@@ -192,11 +255,22 @@ onMounted(() => {
 
 <style scoped>
 .stat-card { text-align: center; margin-bottom: 16px; min-height: 100px; }
+.stat-card.clickable { cursor: pointer; transition: box-shadow .2s, border-color .2s, transform .2s; }
+.stat-card.clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0, 0, 0, .08); }
+.stat-card.clickable.active { border-color: var(--kygl-primary, #409eff); box-shadow: 0 0 0 1px var(--kygl-primary, #409eff) inset; }
+.stat-card.clickable:focus-visible { outline: 2px solid var(--kygl-primary, #409eff); outline-offset: 2px; }
 .stat-label { color: #909399; font-size: 13px; }
+.stat-hint { display: block; margin-top: 2px; font-size: 11px; color: #c0c4cc; }
+.stat-card.clickable:hover .stat-hint { color: var(--kygl-primary, #409eff); }
 .stat-value { font-size: 26px; font-weight: 600; }
 .stat-value.success { color: var(--kygl-success); }
 .stat-value.danger { color: var(--kygl-danger); }
 .card-title { font-weight: 600; }
 .chart { height: 280px; }
 .kygl-card { margin-bottom: 16px; }
+.checkin-list-tabs :deep(.el-tabs__header) { margin-bottom: 12px; }
+@media (max-width: 600px) {
+  .stat-card { min-height: 88px; }
+  .stat-hint { font-size: 10px; }
+}
 </style>
