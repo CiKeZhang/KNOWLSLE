@@ -8,10 +8,13 @@
             测试期采用学生自选导师。选择后老师才能在「学生列表」中看到你的打卡与备考档案，可随时更换。
           </p>
         </div>
-        <el-tag v-if="currentMentor" type="success" size="large" effect="light">
-          当前导师：{{ currentMentor.name }}
-        </el-tag>
-        <el-tag v-else type="warning" size="large" effect="light">尚未选择</el-tag>
+        <div class="header-actions">
+          <el-tag v-if="currentMentor" type="success" size="large" effect="light">
+            当前导师：{{ currentMentor.name }}
+          </el-tag>
+          <el-tag v-else type="warning" size="large" effect="light">尚未选择</el-tag>
+          <el-button text type="primary" class="skip-link" @click="skip">先进入首页</el-button>
+        </div>
       </div>
     </el-card>
 
@@ -164,6 +167,8 @@ onMounted(loadData);
 .mentor-select { max-width: 1100px; margin: 0 auto; }
 .header-card { margin-bottom: 16px; }
 .header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.skip-link { margin-left: 2px; }
 .header-row h2 { margin: 0 0 6px; font-size: 20px; color: #303133; }
 .desc { margin: 0; color: #909399; font-size: 13px; line-height: 1.6; }
 .toolbar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
@@ -203,6 +208,7 @@ onMounted(loadData);
 .tip { color: #c0c4cc; font-size: 12px; }
 @media (max-width: 600px) {
   .header-row { flex-direction: column; align-items: flex-start; }
+  .header-actions { justify-content: flex-start; }
   .mentor-card :deep(.el-card__body) { flex-wrap: wrap; }
 }
 </style>

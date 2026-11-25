@@ -124,6 +124,18 @@ function useDemo(acc: { username: string; password: string }) {
   activeTab.value = 'login';
 }
 
+function homePath(): string {
+  return auth.isStudent ? '/student/dashboard' : '/mentor/dashboard';
+}
+
+function safeRedirect(): string {
+  const raw = route.query.redirect;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
+    ? value
+    : '';
+}
+
 async function handleLogin() {
   if (!formRef.value) return;
   await formRef.value.validate(async (ok) => {
@@ -132,8 +144,13 @@ async function handleLogin() {
     try {
       await auth.login(form.username, form.password);
       ElMessage.success('登录成功');
-      const redirect = (route.query.redirect as string) || '/';
-      router.push(redirect);
+      // 直达角色首页,不再经过 "/" -> "/redirect" 中转页,避免手机上出现"登录成功但没反应"的观感
+      const target = safeRedirect() || homePath();
+      try {
+        await router.replace(target);
+      } catch {
+        router.replace(homePath());
+      }
     } catch {
       /* 错误已由拦截器提示 */
     } finally {
