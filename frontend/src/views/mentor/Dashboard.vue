@@ -50,14 +50,14 @@
         <el-card class="kygl-card">
           <template #header><span class="card-title">阶段分布</span></template>
           <v-chart v-if="stageOption" :option="stageOption" class="chart" autoresize />
-          <el-empty v-else />
+          <el-empty v-else description="测试期暂无阶段数据" :image-size="70" />
         </el-card>
       </el-col>
       <el-col :xs="24" :md="12">
         <el-card class="kygl-card">
           <template #header><span class="card-title">目标院校层次分布</span></template>
           <v-chart v-if="tierOption" :option="tierOption" class="chart" autoresize />
-          <el-empty v-else />
+          <el-empty v-else description="测试期暂无院校层次数据" :image-size="70" />
         </el-card>
       </el-col>
     </el-row>
@@ -66,7 +66,7 @@
     <el-card class="kygl-card">
       <template #header><span class="card-title">近 12 周阶段变化趋势</span></template>
       <v-chart v-if="trendOption" :option="trendOption" class="chart-tall" autoresize />
-      <el-empty v-else />
+      <el-empty v-else description="测试期暂无趋势数据，积累打卡记录后自动生成" :image-size="70" />
     </el-card>
   </div>
 </template>

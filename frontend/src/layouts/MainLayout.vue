@@ -75,7 +75,7 @@
           </el-dropdown>
         </div>
       </el-header>
-      <el-main class="content">
+      <el-main class="content" :class="{ 'has-bottom-nav': isNarrow }">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" />
@@ -83,6 +83,23 @@
         </router-view>
       </el-main>
     </el-container>
+
+    <!-- 手机端底部固定导航:高频入口一步切换,无需每次展开抽屉 -->
+    <nav v-if="isNarrow" class="bottom-nav">
+      <button
+        v-for="item in bottomTabs"
+        :key="item.path"
+        class="bottom-tab"
+        :class="{ active: isTabActive(item) }"
+        @click="onTabClick(item)"
+      >
+        <span class="tab-icon-wrap">
+          <el-icon :size="21"><component :is="item.icon" /></el-icon>
+          <span v-if="item.path === notificationPath && unreadCount > 0" class="tab-dot">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+        </span>
+        <span class="tab-label">{{ item.title }}</span>
+      </button>
+    </nav>
 
     <PasswordDialog v-model:visible="pwdVisible" />
   </el-container>
@@ -95,6 +112,7 @@ import { ElMessageBox } from 'element-plus';
 import { Menu } from '@element-plus/icons-vue';
 import { useAuthStore } from '@/stores/auth';
 import { NotificationsApi } from '@/api';
+import { unreadCountOf, onNoticeReadChanged } from '@/utils/noticeRead';
 import PasswordDialog from '@/components/PasswordDialog.vue';
 
 const auth = useAuthStore();
@@ -179,6 +197,39 @@ const menuItems = computed(() => {
   ];
 });
 
+// 手机底部导航:每个角色 4 个高频入口,「更多」用于展开完整抽屉菜单
+const bottomTabs = computed(() => {
+  if (auth.isStudent) {
+    return [
+      { path: '/student/dashboard', title: '首页', icon: 'HomeFilled' },
+      { path: '/student/checkin', title: '打卡', icon: 'EditPen' },
+      { path: notificationPath, title: '消息', icon: 'Bell' },
+      { path: '/student/archive', title: '我的', icon: 'User' },
+    ];
+  }
+  return [
+    { path: '/mentor/dashboard', title: '看板', icon: 'DataLine' },
+    { path: '/mentor/students', title: '学生', icon: 'UserFilled' },
+    { path: notificationPath, title: '消息', icon: 'Bell' },
+    { path: '__more__', title: '更多', icon: 'Menu' },
+  ];
+});
+
+// 当前底栏项是否选中;支持分组路径前缀匹配
+function isTabActive(item: { path: string }) {
+  if (item.path === '__more__') return false;
+  return route.path === item.path;
+}
+
+function onTabClick(item: { path: string }) {
+  if (item.path === '__more__') {
+    drawerOpen.value = true;
+    return;
+  }
+  drawerOpen.value = false;
+  if (route.path !== item.path) router.push(item.path);
+}
+
 function handleSelect(path: string) {
   drawerOpen.value = false; // 手机端点完菜单自动收起抽屉
   router.push(path);
@@ -200,10 +251,16 @@ async function handleCommand(cmd: string) {
   }
 }
 
+let unreadTimer: ReturnType<typeof setInterval> | undefined;
+let offReadChanged: (() => void) | undefined;
+
 async function loadUnread() {
+  if (!auth.user?.id) return;
   try {
-    const res: any = await NotificationsApi.inbox({ page: 1, pageSize: 1 });
-    unreadCount.value = res?.total ?? 0;
+    // 拉全量(测试期消息量小)ID,结合本地已读记录算出真实未读数
+    const res: any = await NotificationsApi.inbox({ page: 1, pageSize: 500 });
+    const items: any[] = res?.items || [];
+    unreadCount.value = unreadCountOf(auth.user.id, items.map((n) => Number(n.id)));
   } catch {
     /* 静默 */
   }
@@ -211,11 +268,18 @@ async function loadUnread() {
 
 onMounted(() => {
   loadUnread();
+  onResize();
   window.addEventListener('resize', onResize);
-  // 每 60 秒刷新一次未读数
-  setInterval(loadUnread, 60000);
+  // 消息页标记已读后即时同步角标
+  offReadChanged = onNoticeReadChanged(loadUnread);
+  // 每 60 秒刷新一次(新消息到达)
+  unreadTimer = setInterval(loadUnread, 60000);
 });
-onUnmounted(() => window.removeEventListener('resize', onResize));
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize);
+  if (unreadTimer) clearInterval(unreadTimer);
+  offReadChanged?.();
+});
 </script>
 
 <style scoped>
@@ -279,4 +343,51 @@ onUnmounted(() => window.removeEventListener('resize', onResize));
 .ml-8 { margin-left: 8px; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* 手机底部导航 */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 58px;
+  display: flex;
+  background: #fff;
+  border-top: 1px solid #ebeef5;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  z-index: 1500;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.content.has-bottom-nav { padding-bottom: 74px; }
+.bottom-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #909399;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-tab.active { color: #409eff; }
+.tab-icon-wrap { position: relative; display: inline-flex; }
+.tab-label { font-size: 11px; line-height: 1.2; }
+.tab-dot {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #f56c6c;
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+}
 </style>

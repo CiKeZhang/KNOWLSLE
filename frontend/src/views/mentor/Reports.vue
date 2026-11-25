@@ -53,7 +53,7 @@
     <el-card class="kygl-card" v-if="analysis">
       <template #header><span class="card-title">月度打卡趋势</span></template>
       <v-chart v-if="trendOption" :option="trendOption" class="chart" autoresize />
-      <el-empty v-else />
+      <el-empty v-else description="测试期暂无月度趋势数据" :image-size="70" />
     </el-card>
 
     <el-card class="kygl-card" v-if="summary">

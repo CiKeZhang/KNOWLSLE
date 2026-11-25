@@ -23,6 +23,13 @@
       <template #header>
         <span class="card-title">{{ editing ? '修改本周打卡' : '提交本周打卡' }}</span>
       </template>
+      <el-alert
+        v-if="draft.restored && !editing"
+        title="已恢复上次未提交的内容，可继续填写后提交"
+        type="info"
+        :closable="false"
+        class="mb-16"
+      />
       <el-form :model="form" :rules="rules" ref="formRef" label-position="top" size="large">
         <el-divider content-position="left">必填项</el-divider>
 
@@ -177,7 +184,7 @@
     <el-card class="kygl-card">
       <template #header><span class="card-title">近 12 周打卡记录</span></template>
       <v-chart v-if="historyOption" :option="historyOption" class="chart" autoresize />
-      <el-empty v-else description="暂无历史打卡数据" />
+      <el-empty v-else description="暂无历史打卡数据，完成本周打卡后开始记录" :image-size="70" />
     </el-card>
 
     <!-- 模考分数对话框 -->
@@ -220,6 +227,8 @@ import { LineChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { CheckInApi, HelpApi } from '@/api';
+import { useAuthStore } from '@/stores/auth';
+import { useFormDraft } from '@/utils/formDraft';
 import {
   STAGE_LIST, stageLabel, stageTagType,
   HELP_TYPE_LIST,
@@ -250,6 +259,10 @@ const form = reactive<any>({
   targetSchoolChanged: false,
   mockScore: {} as Record<string, number>,
 });
+
+// 填一半自动存草稿,刷新/切走后可恢复
+const auth = useAuthStore();
+const draft = useFormDraft(auth.user?.id, 'checkin', form);
 
 const rules = {
   stage: [{ required: true, message: '请选择当前阶段', trigger: 'change' }],
@@ -358,6 +371,7 @@ async function handleSubmit() {
       await CheckInApi.submit(payload);
       ElMessage.success('本周打卡已提交');
       clearPendingCheckIn();
+      draft.clear();
       editing.value = false;
       await load();
     } catch {

@@ -2,6 +2,13 @@
   <div class="kygl-page">
     <el-card class="kygl-card">
       <template #header><span class="card-title">个人考研档案</span></template>
+      <el-alert
+        v-if="hasDraft"
+        title="已恢复上次未保存的内容，确认无误后点击保存"
+        type="info"
+        :closable="false"
+        class="mb-16"
+      />
       <el-tabs v-model="activeTab">
         <!-- 基本信息与目标院校 -->
         <el-tab-pane label="基本信息" name="archive">
@@ -128,6 +135,8 @@ import { ref, reactive, onMounted } from 'vue';
 import dayjs from 'dayjs';
 import { ElMessage } from 'element-plus';
 import { ProgressApi } from '@/api';
+import { useAuthStore } from '@/stores/auth';
+import { useFormDraft } from '@/utils/formDraft';
 import { STAGE_LIST, SCHOOL_TIER_LIST, stageLabel } from '@/utils/stage';
 
 const activeTab = ref('archive');
@@ -161,6 +170,12 @@ const profileForm = reactive<any>({
   careerIntention: '',
   remainingMonths: undefined,
 });
+
+// 两个表单各自存草稿;load() 会用后端数据覆盖,故 autoRestore=false,在 load 后手动恢复
+const auth = useAuthStore();
+const archiveDraft = useFormDraft(auth.user?.id, 'archive', archiveForm, false);
+const profileDraft = useFormDraft(auth.user?.id, 'profile', profileForm, false);
+const hasDraft = ref(false);
 
 function addStrong() {
   if (strongInput.value && !profileForm.strongSubjects.includes(strongInput.value)) {
@@ -209,6 +224,10 @@ async function load() {
       remainingMonths: prof.remainingMonths ?? undefined,
     });
     timeline.value = res.timeline ?? [];
+    // 后端数据填好后,若有本地草稿则覆盖恢复(草稿=未保存的最新编辑)
+    const a = archiveDraft.restore();
+    const p = profileDraft.restore();
+    hasDraft.value = a || p;
   } catch {
     /* 已提示 */
   }
@@ -218,6 +237,8 @@ async function saveArchive() {
   saving.value = true;
   try {
     await ProgressApi.updateArchive(archiveForm);
+    archiveDraft.clear();
+    hasDraft.value = profileDraft.restored;
     ElMessage.success('档案已保存');
   } catch {
     /* 已提示 */
@@ -230,6 +251,8 @@ async function saveProfile() {
   saving.value = true;
   try {
     await ProgressApi.updateProfile(profileForm);
+    profileDraft.clear();
+    hasDraft.value = archiveDraft.restored;
     ElMessage.success('背景信息已保存');
   } catch {
     /* 已提示 */

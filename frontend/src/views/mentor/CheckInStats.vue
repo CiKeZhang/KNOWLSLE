@@ -55,7 +55,7 @@
     <el-card class="kygl-card">
       <template #header><span class="card-title">近 12 周打卡率趋势</span></template>
       <v-chart v-if="trendOption" :option="trendOption" class="chart" autoresize />
-      <el-empty v-else />
+      <el-empty v-else description="测试期暂无趋势数据，积累打卡记录后自动生成" :image-size="70" />
     </el-card>
 
     <el-card class="kygl-card">
@@ -67,7 +67,7 @@
         <el-table-column prop="major.name" label="专业" width="140" />
         <el-table-column prop="phone" label="手机号" />
       </el-table>
-      <el-empty v-if="missing.length === 0" description="本周全员已完成打卡 ✓" />
+      <el-empty v-if="missing.length === 0" description="本周暂无未打卡学生（尚无打卡记录时也会显示为空）" :image-size="70" />
     </el-card>
 
     <!-- 批量提醒对话框 -->

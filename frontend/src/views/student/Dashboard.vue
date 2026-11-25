@@ -33,6 +33,35 @@
         :closable="false"
         class="mt-16"
       />
+      <div v-if="deadlineTip" class="deadline-tip">
+        <el-icon><AlarmClock /></el-icon>
+        <span>{{ deadlineTip }}</span>
+      </div>
+    </el-card>
+
+    <!-- 我的导师 / 选导师引导 -->
+    <el-card v-if="!mentorLoading" class="kygl-card mentor-card" :class="{ 'mentor-missing': !myMentor }">
+      <div class="mentor-row">
+        <div class="mentor-info">
+          <template v-if="myMentor">
+            <div class="mentor-avatar"><el-icon :size="22"><User /></el-icon></div>
+            <div>
+              <div class="mentor-label">我的指导老师</div>
+              <div class="mentor-name">{{ myMentor.name }} <span class="mentor-no">({{ myMentor.staffNo }})</span></div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="mentor-avatar warn"><el-icon :size="22"><Warning /></el-icon></div>
+            <div>
+              <div class="mentor-label">还未选择指导老师</div>
+              <div class="mentor-name hint">选择导师后，导师就能看到你的进度并给予指导</div>
+            </div>
+          </template>
+        </div>
+        <el-button :type="myMentor ? 'default' : 'primary'" @click="$router.push('/student/mentor-select')">
+          {{ myMentor ? '更换导师' : '立即选择' }}
+        </el-button>
+      </div>
     </el-card>
 
     <!-- 关键节点提醒 -->
@@ -86,7 +115,7 @@
     <el-card class="kygl-card mt-16">
       <template #header><span class="card-title">近 12 周打卡曲线</span></template>
       <v-chart v-if="chartOption" :option="chartOption" class="chart" autoresize />
-      <el-empty v-else description="暂无打卡数据" />
+      <el-empty v-else description="暂无打卡数据，完成本周打卡后开始记录" :image-size="70" />
     </el-card>
 
     <!-- 快捷入口 -->
@@ -113,7 +142,7 @@ import { LineChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { useAuthStore } from '@/stores/auth';
-import { CheckInApi, ProgressApi } from '@/api';
+import { CheckInApi, ProgressApi, MentorSelectionApi } from '@/api';
 import { stageLabel, stageTagType } from '@/utils/stage';
 
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
@@ -124,6 +153,20 @@ const weekStatus = ref<any>({});
 const history = ref<any>({ streak: 0, calendar: [] });
 const archive = ref<any>({});
 const keyNodes = ref<any[]>([]);
+const myMentor = ref<any>(null);
+const mentorLoading = ref(false);
+
+// 本周打卡截止倒计时文案
+const deadlineTip = computed(() => {
+  const end = weekStatus.value?.weekEnd;
+  const submitted = !!weekStatus.value?.currentRecord;
+  if (!end || submitted) return '';
+  const diff = dayjs(end).diff(dayjs(), 'minute');
+  if (diff <= 0) return '本周打卡已截止';
+  const days = Math.floor(diff / 1440);
+  const hours = Math.floor((diff % 1440) / 60);
+  return days > 0 ? `距本周打卡截止还有 ${days} 天 ${hours} 小时` : `距本周打卡截止还有 ${hours} 小时`;
+});
 
 const shortcuts = [
   { path: '/student/checkin', title: '本周打卡', icon: 'EditPen', color: '#2a7ae0' },
@@ -178,6 +221,15 @@ async function load() {
   } catch {
     /* 错误已由拦截器提示 */
   }
+  // 导师状态单独加载,失败不影响看板其它内容
+  mentorLoading.value = true;
+  try {
+    myMentor.value = await MentorSelectionApi.myMentor();
+  } catch {
+    myMentor.value = null;
+  } finally {
+    mentorLoading.value = false;
+  }
 }
 
 onMounted(load);
@@ -203,4 +255,26 @@ onMounted(load);
 }
 .shortcut:hover { background: #f5f7fa; }
 .shortcut p { margin: 8px 0 0; font-size: 13px; color: #606266; }
+.deadline-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  color: #e6a23c;
+  font-size: 13px;
+}
+.mentor-card { border-left: 3px solid #409eff; }
+.mentor-card.mentor-missing { border-left-color: #e6a23c; background: #fffdf6; }
+.mentor-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.mentor-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mentor-avatar {
+  width: 42px; height: 42px; flex: 0 0 42px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: #e8f3ff; color: #409eff;
+}
+.mentor-avatar.warn { background: #fdf6ec; color: #e6a23c; }
+.mentor-label { font-size: 12px; color: #909399; margin-bottom: 3px; }
+.mentor-name { font-size: 16px; font-weight: 600; color: #303133; }
+.mentor-name.hint { font-size: 13px; font-weight: 400; color: #606266; }
+.mentor-no { font-size: 12px; font-weight: 400; color: #909399; }
 </style>
