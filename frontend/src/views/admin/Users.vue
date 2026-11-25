@@ -119,7 +119,12 @@ function roleLabel(r: string) {
 
 async function load() {
   try {
-    const res: any = await UsersApi.list(filter);
+    // 后端 role 是枚举校验,传空字符串会 400;发请求前剔除空筛选值
+    const params: Record<string, any> = { ...filter };
+    Object.keys(params).forEach((k) => {
+      if (params[k] === '' || params[k] === undefined || params[k] === null) delete params[k];
+    });
+    const res: any = await UsersApi.list(params);
     list.value = res.items || [];
     total.value = res.total || 0;
   } catch {

@@ -117,12 +117,15 @@ async function load() {
     Object.keys(params).forEach((k) => {
       if (params[k] === '' || params[k] === undefined) delete params[k];
     });
-    const [s, a] = await Promise.all([
+    // 两个请求独立:checkin-analysis 仅管理员可用,导师/院长调用会 403。
+    // 用 allSettled 避免它失败时把 summary 也一起拖垮,导致整个报表页空白。
+    const [s, a] = await Promise.allSettled([
       ReportsApi.summary(params),
       ReportsApi.checkinAnalysis(params),
     ]);
-    summary.value = s;
-    analysis.value = a;
+    if (s.status === 'fulfilled') summary.value = s.value;
+    // 403/失败时保留空趋势图,不影响通过率/上岸率等核心指标
+    if (a.status === 'fulfilled') analysis.value = a.value;
   } catch {
     /* 已提示 */
   }

@@ -29,27 +29,32 @@ http.interceptors.request.use(
 http.interceptors.response.use(
   (response) => {
     const data = response.data;
+    const silent = (response.config as AxiosRequestConfig & { silent?: boolean })?.silent === true;
     if (data && typeof data === 'object' && 'success' in data) {
       if (data.success) return data.data;
-      ElMessage.error(data.message || '请求失败');
+      if (!silent) ElMessage.error(data.message || '请求失败');
       return Promise.reject(new Error(data.message));
     }
     return data;
   },
   (error: AxiosError<{ message?: string; detail?: unknown }>) => {
+    const cfg = (error.config || {}) as AxiosRequestConfig & { skipAuthRedirect?: boolean; silent?: boolean };
     if (error.response) {
       const { status, data } = error.response;
-      if (status === 401) {
+      // 登录/初始化类接口:401 是「账号或密码错误」等业务失败,不是会话失效。
+      // 不能清 token、不能弹「登录已失效」、更不能强制跳转,否则输错一次账号
+      // 就会被误导成系统故障,且登录页自己也会被 redirect 打断。
+      if (status === 401 && !cfg.skipAuthRedirect) {
         localStorage.removeItem('kygl_token');
         localStorage.removeItem('kygl_user');
-        ElMessage.warning('登录已失效,请重新登录');
+        if (!cfg.silent) ElMessage.warning('登录已失效,请重新登录');
         router.push('/login');
-      } else {
-        ElMessage.error(data?.message || `请求错误(${status})`);
+      } else if (!cfg.silent) {
+        ElMessage.error(data?.message || (status === 401 ? '账号或密码错误' : `请求错误(${status})`));
       }
     } else if (error.request) {
-      ElMessage.error('网络异常,请检查网络连接');
-    } else {
+      if (!cfg.silent) ElMessage.error('网络异常,请检查网络连接');
+    } else if (!cfg.silent) {
       ElMessage.error(error.message);
     }
     return Promise.reject(error);
@@ -60,9 +65,12 @@ export default http;
 
 // ============ 业务 API 封装 ============
 
+// 登录类接口用 skipAuthRedirect 标记:401=账号/密码错误(业务失败),不走「会话失效」分支
+const AUTH_FAIL_CONFIG: AxiosRequestConfig = { skipAuthRedirect: true } as AxiosRequestConfig;
+
 export const AuthApi = {
   login: (username: string, password: string) =>
-    http.post('/auth/login', { username, password }),
+    http.post('/auth/login', { username, password }, AUTH_FAIL_CONFIG),
   profile: () => http.get('/auth/profile'),
   changePassword: (oldPassword: string, newPassword: string) =>
     http.post('/auth/change-password', { oldPassword, newPassword }),
@@ -71,7 +79,7 @@ export const AuthApi = {
     http.post(
       '/auth/bootstrap-admin',
       { username, password, name },
-      bootstrapToken ? { headers: { 'x-bootstrap-token': bootstrapToken } } : undefined,
+      { ...AUTH_FAIL_CONFIG, ...(bootstrapToken ? { headers: { 'x-bootstrap-token': bootstrapToken } } : {}) },
     ),
 };
 
@@ -168,8 +176,9 @@ export const ReportsApi = {
       params,
       responseType: 'blob',
     }),
+  // 该接口仅管理员可用;导师/院长调用会 403,静默失败不弹错(页面按角色降级展示)
   checkinAnalysis: (params?: any) =>
-    http.get('/reports/checkin-analysis', { params }),
+    http.get('/reports/checkin-analysis', { params, silent: true } as AxiosRequestConfig),
 };
 
 export const NotificationsApi = {

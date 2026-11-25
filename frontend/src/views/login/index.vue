@@ -11,7 +11,7 @@
             <el-form-item prop="username">
               <el-input
                 v-model="form.username"
-                placeholder="学号 / 工号 / 用户名"
+                placeholder="账号(学生填学号,老师填工号)"
                 size="large"
                 :prefix-icon="User"
                 @keyup.enter="handleLogin"
