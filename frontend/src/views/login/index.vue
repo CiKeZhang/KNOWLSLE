@@ -149,8 +149,14 @@ async function handleLogin() {
       try {
         await router.replace(target);
       } catch {
-        router.replace(homePath());
+        router.replace(homePath()).catch(() => undefined);
       }
+      // 兜底:部分手机浏览器里 router.replace 会被并发导航打断,1 秒后直接改 hash 强制落地
+      setTimeout(() => {
+        if (!location.hash.startsWith('#' + target)) {
+          location.hash = '#' + target;
+        }
+      }, 1000);
     } catch {
       /* 错误已由拦截器提示 */
     } finally {

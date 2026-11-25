@@ -182,12 +182,14 @@ router.beforeEach(async (to) => {
   }
 
   // 全自选模式: 学生未选导师时先引导一次; 页面内可选择,也可暂时跳过
+  // 注意: 不在这里 await 接口,否则接口慢/超时会把用户卡在登录页,表现为"登录成功但不跳转"
   if (auth.isStudent && to.path !== MENTOR_SELECT_PATH) {
     if (sessionStorage.getItem('kygl_skip_mentor') !== '1') {
-      const hasMentor = await auth.ensureMentorSelected();
-      if (!hasMentor) {
-        return { path: MENTOR_SELECT_PATH, query: { redirect: to.fullPath } };
-      }
+      auth.ensureMentorSelected().then((hasMentor) => {
+        if (!hasMentor && router.currentRoute.value.path === to.path) {
+          router.replace({ path: MENTOR_SELECT_PATH, query: { redirect: to.fullPath } });
+        }
+      });
     }
   }
   return true;
