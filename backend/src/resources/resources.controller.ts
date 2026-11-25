@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { ResourcesService } from './resources.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -28,6 +29,16 @@ class CreateResourceDto {
   filePath?: string;
   stage?: StudyStage;
   majorName?: string;
+}
+
+class UpdateResourceDto {
+  @IsOptional() @IsEnum(ResourceType) type?: ResourceType;
+  @IsOptional() @IsString() title?: string;
+  @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsString() url?: string;
+  @IsOptional() @IsString() filePath?: string;
+  @IsOptional() @IsEnum(StudyStage) stage?: StudyStage;
+  @IsOptional() @IsString() majorName?: string;
 }
 
 @ApiTags('备考资源库')
@@ -87,6 +98,17 @@ export class ResourcesController {
   @ApiOperation({ summary: '下架资源' })
   offline(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthUser) {
     return this.resources.offline(id, user.id);
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.ACADEMIC_ADMIN, UserRole.SYS_ADMIN)
+  @ApiOperation({ summary: '编辑资源(标题/描述/链接/适用阶段专业)' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateResourceDto,
+  ) {
+    return this.resources.update(id, dto, user.id);
   }
 
   @Get('admin/pending-review')

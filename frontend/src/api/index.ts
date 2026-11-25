@@ -158,6 +158,7 @@ export const ResourcesApi = {
   list: (params?: any) => http.get('/resources', { params }),
   view: (id: number) => http.get(`/resources/${id}`),
   create: (data: any) => http.post('/resources', data),
+  update: (id: number, data: any) => http.patch(`/resources/${id}`, data),
   review: (id: number, status: string) =>
     http.patch(`/resources/${id}/review`, { status }),
   offline: (id: number) => http.patch(`/resources/${id}/offline`),

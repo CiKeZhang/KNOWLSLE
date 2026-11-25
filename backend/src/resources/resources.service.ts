@@ -80,6 +80,27 @@ export class ResourcesService {
     return updated;
   }
 
+  /** 编辑资源(管理员),用于补充/更换外链等 */
+  async update(
+    id: number,
+    data: {
+      type?: ResourceType;
+      title?: string;
+      description?: string;
+      url?: string;
+      filePath?: string;
+      stage?: StudyStage;
+      majorName?: string;
+    },
+    operatorId: number,
+  ) {
+    const existing = await this.prisma.resource.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('资源不存在');
+    const updated = await this.prisma.resource.update({ where: { id }, data });
+    await this.opLog.record(operatorId, 'update_resource', `resource:${id}`, data);
+    return updated;
+  }
+
   /** 下架资源 */
   async offline(id: number, operatorId: number) {
     const updated = await this.prisma.resource.update({

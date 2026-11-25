@@ -47,6 +47,28 @@
       layout="prev, pager, next"
       @current-change="load"
     />
+
+    <el-dialog v-model="detailDialog" title="资源详情" width="520px">
+      <template v-if="detail">
+        <div class="d-title">{{ detail.title }}</div>
+        <div class="d-meta">
+          <el-tag size="small">{{ resourceTypeLabel(detail.type) }}</el-tag>
+          <span v-if="detail.stage" class="muted">{{ stageLabel(detail.stage) }}</span>
+          <span v-if="detail.majorName" class="muted">{{ detail.majorName }}</span>
+        </div>
+        <p class="d-desc">{{ detail.description || '暂无描述' }}</p>
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          title="该资源暂未配置有效链接"
+          description="请联系老师或管理员补充链接后，再从这里打开。"
+        />
+      </template>
+      <template #footer>
+        <el-button type="primary" @click="detailDialog = false">知道了</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -62,6 +84,12 @@ const filter = reactive({ type: '', stage: '', keyword: '', page: 1 });
 const list = ref<any[]>([]);
 const total = ref(0);
 const pageSize = 20;
+const detail = ref<any>(null);
+const detailDialog = ref(false);
+
+function isValidExternal(url?: string | null) {
+  return !!url && /^https?:\/\//i.test(url) && !/example\.com/i.test(url);
+}
 
 async function load() {
   try {
@@ -74,8 +102,12 @@ async function load() {
 }
 
 async function view(r: any) {
-  if (r.url) {
-    window.open(r.url, '_blank');
+  // 有真实外链才跳转；示例/空链接改为弹出详情提示，避免跳到无效页面
+  if (isValidExternal(r.url)) {
+    window.open(r.url as string, '_blank', 'noopener,noreferrer');
+  } else {
+    detail.value = r;
+    detailDialog.value = true;
   }
   await ResourcesApi.view(r.id);
 }
@@ -92,4 +124,7 @@ onMounted(load);
 .r-meta { display: flex; gap: 12px; }
 .muted { color: #909399; font-size: 12px; }
 .mt-16 { margin-top: 16px; }
+.d-title { font-size: 17px; font-weight: 600; margin-bottom: 10px; }
+.d-meta { display: flex; align-items: center; gap: 10px; }
+.d-desc { color: #606266; font-size: 13px; line-height: 1.6; margin: 14px 0; }
 </style>
