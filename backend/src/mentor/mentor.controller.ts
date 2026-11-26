@@ -18,6 +18,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorator';
 import { UserRole, HelpType, HelpStatus } from '../common/enums';
+import { FULL_ACCESS_MENTOR_STAFF_NOS } from '../common/utils/student-scope';
 
 class BatchNotifyDto {
   @IsArray()
@@ -57,6 +58,15 @@ class SelectMentorDto {
 export class MentorController {
   constructor(private readonly mentor: MentorService) {}
 
+  /** 全量可见院长不套用"按本人专业过滤"的默认规则,否则会被限制成只看本专业的学生 */
+  private isFullAccessMentor(user: AuthUser): boolean {
+    return (
+      user.role === UserRole.MAJOR_MENTOR &&
+      !!user.staffNo &&
+      FULL_ACCESS_MENTOR_STAFF_NOS.includes(user.staffNo)
+    );
+  }
+
   @Get('options')
   @Roles(UserRole.STUDENT)
   @ApiOperation({ summary: '可选导师列表(学生端选择教师)' })
@@ -87,9 +97,12 @@ export class MentorController {
     @Query('majorId') majorId?: string,
     @Query('departmentId') departmentId?: string,
   ) {
-    // MAJOR_MENTOR 默认按本人专业过滤
-    const effMajorId =
-      user.role === 'MAJOR_MENTOR' ? (user.majorId ?? (majorId ? Number(majorId) : undefined)) : (majorId ? Number(majorId) : undefined);
+    // MAJOR_MENTOR 默认按本人专业过滤; 两位全量院长例外,不套用默认专业过滤
+    const effMajorId = this.isFullAccessMentor(user)
+      ? (majorId ? Number(majorId) : undefined)
+      : user.role === 'MAJOR_MENTOR'
+        ? (user.majorId ?? (majorId ? Number(majorId) : undefined))
+        : (majorId ? Number(majorId) : undefined);
     return this.mentor.dashboard({
       mentorId: user.id,
       role: user.role,
@@ -115,8 +128,11 @@ export class MentorController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
-    const effMajorId =
-      user.role === 'MAJOR_MENTOR' ? (user.majorId ?? (majorId ? Number(majorId) : undefined)) : (majorId ? Number(majorId) : undefined);
+    const effMajorId = this.isFullAccessMentor(user)
+      ? (majorId ? Number(majorId) : undefined)
+      : user.role === 'MAJOR_MENTOR'
+        ? (user.majorId ?? (majorId ? Number(majorId) : undefined))
+        : (majorId ? Number(majorId) : undefined);
     return this.mentor.listStudents({
       mentorId: user.id,
       role: user.role,
